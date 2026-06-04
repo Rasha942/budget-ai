@@ -116,7 +116,7 @@ export default function App() {
 
           {/* Summary button */}
           <TouchableOpacity style={styles.summaryButton} onPress={fetchSummary}>
-            <Text style={styles.buttonText}>📊 הצג סיכום חודשי</Text>
+            <Text style={styles.summaryButtonText}>📊 הצג סיכום חודשי</Text>
           </TouchableOpacity>
 
           {/* Status message */}
@@ -222,5 +222,19 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     fontSize: 14,
     textDecorationLine: "underline",
+  },
+  summaryButton: {
+    backgroundColor: "#1e2832",
+    padding: 16,
+    borderRadius: 8,
+    alignItems: "center",
+    marginTop: 12,
+    borderColor: "#00e5a0",
+    borderWidth: 1,
+  },
+  summaryButtonText: {
+    color: "#00e5a0",
+    fontSize: 16,
+    fontWeight: "bold",
   },
 });
