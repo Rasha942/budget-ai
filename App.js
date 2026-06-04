@@ -60,11 +60,15 @@ export default function App() {
       {/* Title */}
       <Text style={styles.title}>💰 AI Budget Manager</Text>
       <TouchableOpacity
-        onPress={() =>
-          Linking.openURL(
-            "https://docs.google.com/spreadsheets/d/178wlPrfvbr8ZE25PcnZFdBTn1CsfIwr7LUduTqsIA4U",
-          )
-        }
+        onPress={async () => {
+          const appURL =
+            "googlesheets://spreadsheets/d/178wlPrfvbr8ZE25PcnZFdBTn1CsfIwr7LUduTqsIA4U";
+          const webURL =
+            "https://docs.google.com/spreadsheets/d/178wlPrfvbr8ZE25PcnZFdBTn1CsfIwr7LUduTqsIA4U";
+
+          const canOpen = await Linking.canOpenURL(appURL);
+          Linking.openURL(canOpen ? appURL : webURL);
+        }}
       >
         <Text style={styles.sheetLink}>📊 פתח גיליון</Text>
       </TouchableOpacity>
