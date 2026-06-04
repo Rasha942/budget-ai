@@ -2,6 +2,8 @@ const express = require("express");
 const cors = require("cors");
 const { parseTransaction } = require("./services/parseTransaction");
 const { saveTransaction } = require("./services/saveTransaction");
+const { getTransactions } = require("./services/getTransactions");
+
 const Anthropic = require("@anthropic-ai/sdk");
 require("dotenv").config();
 
@@ -46,13 +48,6 @@ app.post("/transaction", async (req, res) => {
   }
 });
 
-app.get("/summary", async (req, res) => {});
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
-
 app.get("/summary", async (req, res) => {
   try {
     const transactions = await getTransactions();
@@ -70,6 +65,12 @@ app.get("/summary", async (req, res) => {
 
     res.json({ summary, total });
   } catch (error) {
+    console.error("Summary error:", error.message);
     res.status(500).json({ error: "Failed to get summary" });
   }
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
