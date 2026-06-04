@@ -15,6 +15,7 @@ export default function App() {
   const [transaction, setTransaction] = useState(null);
   const [loading, setLoading] = useState(false);
   const [placeholder, setPlaceholder] = useState("מה הוצאת היום?");
+  const [summary, setSummary] = useState(null);
 
   useEffect(() => {
     fetchPlaceholder();
@@ -55,6 +56,14 @@ export default function App() {
     }
   }
 
+  async function fetchSummary() {
+    const response = await fetch(
+      "https://budget-ai-production-1c70.up.railway.app/summary",
+    );
+    const data = await response.json();
+    setSummary(data);
+  }
+
   return (
     <View style={styles.container}>
       {/* Title */}
@@ -70,7 +79,10 @@ export default function App() {
           Linking.openURL(canOpen ? appURL : webURL);
         }}
       >
-        <Text style={styles.sheetLink}>📊 פתח גיליון</Text>
+        <Text style={styles.sheetLink}>📋 פתח גיליון</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.summaryButton} onPress={fetchSummary}>
+        <Text style={styles.buttonText}>📊 סיכום חודשי</Text>
       </TouchableOpacity>
 
       {/* Input */}
@@ -105,6 +117,20 @@ export default function App() {
             💵 {transaction.amount} {transaction.currency}
           </Text>
           <Text style={styles.cardText}>📅 {transaction.date}</Text>
+        </View>
+      )}
+      {/* Summary card */}
+      {summary && (
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>📊 סיכום הוצאות</Text>
+          {Object.entries(summary.summary).map(([category, amount]) => (
+            <Text key={category} style={styles.cardText}>
+              {category}: {amount.toFixed(2)} ₪
+            </Text>
+          ))}
+          <Text style={styles.cardTitle}>
+            סה״כ: {summary.total.toFixed(2)} ₪
+          </Text>
         </View>
       )}
     </View>
