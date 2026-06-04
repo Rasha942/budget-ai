@@ -3,6 +3,7 @@ require("dotenv").config();
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 async function parseTransaction(userInput) {
+  const today = new Date().toISOString().split("T")[0];
   const response = await client.messages.create({
     model: "claude-sonnet-4-6",
     max_tokens: 300,
@@ -13,15 +14,17 @@ async function parseTransaction(userInput) {
 
 "${userInput}"
 
+Today's date is ${today}. Use this as the date unless the user specifies otherwise.
+
 Return this exact format:
 {
   "amount": 42,
   "currency": "ILS",
   "category": "Food",
   "description": "Coffee and sandwich",
-  "date": "2026-06-03"
+  "date": "dd-mm-yyyy"
 }
-
+        
 Categories: אוכל, תחבורה, קניות, חשבונות, בריאות (רפואי בלבד), קוסמטיקה, בידור (סרטים, משחקי וידאו וכו'), אחר
 If none of these fit, invent an appropriate category name in Hebrew.`,
       },
