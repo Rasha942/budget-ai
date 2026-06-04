@@ -45,7 +45,31 @@ app.post("/transaction", async (req, res) => {
     res.status(500).json({ error: "Failed to save transaction" });
   }
 });
+
+app.get("/summary", async (req, res) => {});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+});
+
+app.get("/summary", async (req, res) => {
+  try {
+    const transactions = await getTransactions();
+
+    const summary = {};
+
+    transactions.forEach((t) => {
+      if (!summary[t.category]) {
+        summary[t.category] = 0;
+      }
+      summary[t.category] += t.amount;
+    });
+
+    const total = Object.values(summary).reduce((sum, val) => sum + val, 0);
+
+    res.json({ summary, total });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to get summary" });
+  }
 });
