@@ -8,6 +8,10 @@ import {
   ActivityIndicator,
   Linking,
   KeyboardAvoidingView,
+  ScrollView,
+  TouchableWithoutFeedback,
+  Keyboard,
+  Platform,
 } from "react-native";
 
 export default function App() {
