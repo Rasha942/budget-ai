@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
+  Linking,
 } from "react-native";
 
 export default function App() {
@@ -58,6 +59,15 @@ export default function App() {
     <View style={styles.container}>
       {/* Title */}
       <Text style={styles.title}>💰 AI Budget Manager</Text>
+      <TouchableOpacity
+        onPress={() =>
+          Linking.openURL(
+            "https://docs.google.com/spreadsheets/d/178wlPrfvbr8ZE25PcnZFdBTn1CsfIwr7LUduTqsIA4U",
+          )
+        }
+      >
+        <Text style={styles.sheetLink}>📊 פתח גיליון</Text>
+      </TouchableOpacity>
 
       {/* Input */}
       <TextInput
@@ -157,5 +167,12 @@ const styles = StyleSheet.create({
   cardText: {
     color: "#eaf0f8",
     fontSize: 14,
+  },
+  sheetLink: {
+    color: "#4da8ff",
+    textAlign: "center",
+    marginBottom: 24,
+    fontSize: 14,
+    textDecorationLine: "underline",
   },
 });
