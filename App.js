@@ -20,7 +20,9 @@ export default function App() {
   }, []);
 
   async function fetchPlaceholder() {
-    const response = await fetch("http://10.0.0.34:3000/placeholder");
+    const response = await fetch(
+      "https://budget-ai-production-1c70.up.railway.app/placeholder",
+    );
     const data = await response.json();
     setPlaceholder(data.placeholder);
   }
@@ -33,11 +35,14 @@ export default function App() {
     setTransaction(null);
 
     try {
-      const response = await fetch("http://10.0.0.34:3000/transaction", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: input }),
-      });
+      const response = await fetch(
+        "https://budget-ai-production-1c70.up.railway.app/transaction",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: input }),
+        },
+      );
       const data = await response.json();
       setTransaction(data.transaction);
       setStatus("✅ נשמר בהצלחה");
