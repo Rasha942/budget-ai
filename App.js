@@ -7,6 +7,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   Linking,
+  KeyboardAvoidingView,
 } from "react-native";
 
 export default function App() {
@@ -65,75 +66,88 @@ export default function App() {
   }
 
   return (
-    <View style={styles.container}>
-      {/* Title */}
-      <Text style={styles.title}>💰 AI Budget Manager</Text>
-      <TouchableOpacity
-        onPress={async () => {
-          const appURL =
-            "googlesheets://spreadsheets/d/178wlPrfvbr8ZE25PcnZFdBTn1CsfIwr7LUduTqsIA4U";
-          const webURL =
-            "https://docs.google.com/spreadsheets/d/178wlPrfvbr8ZE25PcnZFdBTn1CsfIwr7LUduTqsIA4U";
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={styles.container}
+    >
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1 }}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Title */}
+          <Text style={styles.title}>💰 AI Budget Manager</Text>
 
-          const canOpen = await Linking.canOpenURL(appURL);
-          Linking.openURL(canOpen ? appURL : webURL);
-        }}
-      >
-        <Text style={styles.sheetLink}>📋 פתח גיליון</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.summaryButton} onPress={fetchSummary}>
-        <Text style={styles.buttonText}>📊 סיכום חודשי</Text>
-      </TouchableOpacity>
+          <TouchableOpacity
+            onPress={async () => {
+              const appURL =
+                "googlesheets://spreadsheets/d/178wlPrfvbr8ZE25PcnZFdBTn1CsfIwr7LUduTqsIA4U";
+              const webURL =
+                "https://docs.google.com/spreadsheets/d/178wlPrfvbr8ZE25PcnZFdBTn1CsfIwr7LUduTqsIA4U";
+              const canOpen = await Linking.canOpenURL(appURL);
+              Linking.openURL(canOpen ? appURL : webURL);
+            }}
+          >
+            <Text style={styles.sheetLink}>📋 פתח גיליון</Text>
+          </TouchableOpacity>
 
-      {/* Input */}
-      <TextInput
-        style={styles.input}
-        placeholder={placeholder}
-        placeholderTextColor="#6a7a8a"
-        value={input}
-        onChangeText={setInput}
-        multiline
-      />
+          {/* Input */}
+          <TextInput
+            style={styles.input}
+            placeholder={placeholder}
+            placeholderTextColor="#6a7a8a"
+            value={input}
+            onChangeText={setInput}
+            multiline
+          />
 
-      {/* Submit button or spinner */}
-      {loading ? (
-        <ActivityIndicator size="large" color="#00e5a0" />
-      ) : (
-        <TouchableOpacity style={styles.button} onPress={handleSubmit}>
-          <Text style={styles.buttonText}>שמור</Text>
-        </TouchableOpacity>
-      )}
+          {/* Submit button or spinner */}
+          {loading ? (
+            <ActivityIndicator size="large" color="#00e5a0" />
+          ) : (
+            <TouchableOpacity style={styles.button} onPress={handleSubmit}>
+              <Text style={styles.buttonText}>שמור</Text>
+            </TouchableOpacity>
+          )}
 
-      {/* Status message */}
-      {status ? <Text style={styles.status}>{status}</Text> : null}
+          {/* Summary button */}
+          <TouchableOpacity style={styles.summaryButton} onPress={fetchSummary}>
+            <Text style={styles.buttonText}>📊 הצג סיכום חודשי</Text>
+          </TouchableOpacity>
 
-      {/* Transaction confirmation card */}
-      {transaction && (
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>✅ עסקה נשמרה</Text>
-          <Text style={styles.cardText}>📝 {transaction.description}</Text>
-          <Text style={styles.cardText}>🏷️ {transaction.category}</Text>
-          <Text style={styles.cardText}>
-            💵 {transaction.amount} {transaction.currency}
-          </Text>
-          <Text style={styles.cardText}>📅 {transaction.date}</Text>
-        </View>
-      )}
-      {/* Summary card */}
-      {summary && (
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>📊 סיכום הוצאות</Text>
-          {Object.entries(summary.summary).map(([category, amount]) => (
-            <Text key={category} style={styles.cardText}>
-              {category}: {amount.toFixed(2)} ₪
-            </Text>
-          ))}
-          <Text style={styles.cardTitle}>
-            סה״כ: {summary.total.toFixed(2)} ₪
-          </Text>
-        </View>
-      )}
-    </View>
+          {/* Status message */}
+          {status ? <Text style={styles.status}>{status}</Text> : null}
+
+          {/* Transaction confirmation card */}
+          {transaction && (
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>✅ עסקה נשמרה</Text>
+              <Text style={styles.cardText}>📝 {transaction.description}</Text>
+              <Text style={styles.cardText}>🏷️ {transaction.category}</Text>
+              <Text style={styles.cardText}>
+                💵 {transaction.amount} {transaction.currency}
+              </Text>
+              <Text style={styles.cardText}>📅 {transaction.date}</Text>
+            </View>
+          )}
+
+          {/* Summary card */}
+          {summary && (
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>📊 סיכום הוצאות</Text>
+              {Object.entries(summary.summary).map(([category, amount]) => (
+                <Text key={category} style={styles.cardText}>
+                  {category}: {amount.toFixed(2)} ₪
+                </Text>
+              ))}
+              <Text style={styles.cardTitle}>
+                סה״כ: {summary.total.toFixed(2)} ₪
+              </Text>
+            </View>
+          )}
+        </ScrollView>
+      </TouchableWithoutFeedback>
+    </KeyboardAvoidingView>
   );
 }
 
