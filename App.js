@@ -13,7 +13,8 @@ import {
   Keyboard,
   Platform,
 } from "react-native";
-
+import { useGoogleAuth } from "./auth";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 export default function App() {
   const [input, setInput] = useState("");
   const [status, setStatus] = useState("");
@@ -21,9 +22,19 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [placeholder, setPlaceholder] = useState("מה הוצאת היום?");
   const [summary, setSummary] = useState(null);
-
+  const [user, setUser] = useState(null);
+  const [token, setToken] = useState(null);
+  const [workspaceId, setWorkspaceId] = useState(null);
+  const { request, response, promptAsync } = useGoogleAuth();
+  useEffect(() => {
+    if (response?.type === "success") {
+      const { id_token } = response.params;
+      handleSignIn(id_token);
+    }
+  }, [response]);
   useEffect(() => {
     fetchPlaceholder();
+    restoreSession();
   }, []);
 
   async function fetchPlaceholder() {
@@ -46,8 +57,11 @@ export default function App() {
         "https://budget-ai-production-1c70.up.railway.app/transaction",
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text: input }),
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`, // ← add this
+          },
+          body: JSON.stringify({ text: input, workspaceId }), // ← add workspaceId
         },
       );
       const data = await response.json();
@@ -63,10 +77,65 @@ export default function App() {
 
   async function fetchSummary() {
     const response = await fetch(
-      "https://budget-ai-production-1c70.up.railway.app/summary",
+      `https://budget-ai-production-1c70.up.railway.app/summary?workspaceId=${workspaceId}`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      },
     );
     const data = await response.json();
     setSummary(data);
+  }
+
+  async function handleSignIn(idToken) {
+    try {
+      const response = await fetch(
+        "https://budget-ai-production-1c70.up.railway.app/auth/signin",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ idToken }),
+        },
+      );
+      const data = await response.json();
+
+      setToken(idToken);
+      setUser(data.user);
+      setWorkspaceId(data.workspaceId);
+
+      await AsyncStorage.setItem("token", idToken);
+      await AsyncStorage.setItem("user", JSON.stringify(data.user));
+      await AsyncStorage.setItem("workspaceId", data.workspaceId);
+    } catch (error) {
+      console.error("Sign in error:", error);
+      setStatus("❌ שגיאה בהתחברות");
+    }
+  }
+  async function restoreSession() {
+    const savedToken = await AsyncStorage.getItem("token");
+    const savedUser = await AsyncStorage.getItem("user");
+    const savedWorkspaceId = await AsyncStorage.getItem("workspaceId");
+
+    if (savedToken && savedUser && savedWorkspaceId) {
+      setToken(savedToken);
+      setUser(JSON.parse(savedUser));
+      setWorkspaceId(savedWorkspaceId);
+    }
+  }
+  if (!user) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.title}>💰 AI Budget Manager</Text>
+        <Text style={styles.subtitle}>נהל את ההוצאות שלך בעברית</Text>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => promptAsync()}
+          disabled={!request}
+        >
+          <Text style={styles.buttonText}>🔐 התחבר עם Google</Text>
+        </TouchableOpacity>
+        {status ? <Text style={styles.status}>{status}</Text> : null}
+      </View>
+    );
   }
 
   return (
@@ -236,5 +305,11 @@ const styles = StyleSheet.create({
     color: "#00e5a0",
     fontSize: 16,
     fontWeight: "bold",
+  },
+  subtitle: {
+    color: "#6a7a8a",
+    textAlign: "center",
+    fontSize: 16,
+    marginBottom: 48,
   },
 });

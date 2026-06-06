@@ -6,6 +6,10 @@ const { getTransactions } = require("./services/getTransactions");
 const { verifyToken } = require("./services/authMiddleware");
 const Anthropic = require("@anthropic-ai/sdk");
 require("dotenv").config();
+const { admin } = require("./services/firebaseAdmin");
+const { db } = require("./services/firebase");
+const { doc, getDoc, setDoc } = require("firebase/firestore");
+const { createWorkspace } = require("./services/workspace");
 
 const app = express();
 app.use(cors());
@@ -93,6 +97,33 @@ app.get("/summary", verifyToken, async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
+app.post("/auth/signin", async (req, res) => {
+  try {
+    const { idToken } = req.body;
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    const { email, name } = decodedToken;
+
+    const userRef = doc(db, "users", email);
+    const userDoc = await getDoc(userRef);
+
+    let workspaceId;
+
+    if (userDoc.exists()) {
+      workspaceId = userDoc.data().workspaceIds[0];
+    } else {
+      workspaceId = await createWorkspace(email, name, `${name}'s Budget`);
+    }
+
+    res.json({
+      user: { email, name },
+      workspaceId,
+    });
+  } catch (error) {
+    console.error("Auth error:", error.message);
+    res.status(401).json({ error: "Authentication failed" });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
