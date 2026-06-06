@@ -41,3 +41,5 @@ yarn-error.*
 /android
 services/google-cred.json
 .env
+services/firebase-admin-cred.json
+services/firebase-admin-cred.json
