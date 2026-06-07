@@ -1,132 +1,42 @@
 import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
-  Linking,
-  KeyboardAvoidingView,
-  ScrollView,
-  TouchableWithoutFeedback,
-  Keyboard,
-  Platform,
-} from "react-native";
-import { useGoogleAuth } from "./auth";
+import { NavigationContainer } from "@react-navigation/native";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { Text } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useGoogleAuth } from "./auth";
+
+import LoginScreen from "./screens/LoginScreen";
+import WorkspaceSetupScreen from "./screens/WorkspaceSetupScreen";
+import HomeScreen from "./screens/HomeScreen";
+import HistoryScreen from "./screens/HistoryScreen";
+import SummaryScreen from "./screens/SummaryScreen";
+import WorkspaceScreen from "./screens/WorkspaceScreen";
+
+const Tab = createBottomTabNavigator();
+
 export default function App() {
-  const [input, setInput] = useState("");
-  const [status, setStatus] = useState("");
-  const [transaction, setTransaction] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [placeholder, setPlaceholder] = useState("מה הוצאת היום?");
-  const [summary, setSummary] = useState(null);
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [workspaceId, setWorkspaceId] = useState(null);
+  const [loading, setLoading] = useState(true);
   const { request, response, promptAsync } = useGoogleAuth();
+
+  useEffect(() => {
+    restoreSession();
+  }, []);
+
   useEffect(() => {
     if (response?.type === "success") {
       const { access_token } = response.params;
       handleSignIn(access_token);
     }
   }, [response]);
-  useEffect(() => {
-    fetchPlaceholder();
-    restoreSession();
-  }, []);
 
-  async function fetchPlaceholder() {
-    const response = await fetch(
-      "https://budget-ai-production-1c70.up.railway.app/placeholder",
-    );
-    const data = await response.json();
-    setPlaceholder(data.placeholder);
-  }
-
-  async function handleSubmit() {
-    if (!input) return;
-
-    setLoading(true);
-    setStatus("");
-    setTransaction(null);
-    setSummary(null);
-
-    try {
-      const response = await fetch(
-        "https://budget-ai-production-1c70.up.railway.app/transaction",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ text: input, workspaceId }),
-        },
-      );
-      const data = await response.json();
-
-      if (data.type === "answer") {
-        // analyst answered a question
-        setStatus(data.message);
-      } else {
-        // transaction was saved
-        setTransaction(data.transaction);
-        setStatus("✅ נשמר בהצלחה");
-        if (data.anomaly) {
-          setStatus(`✅ נשמר בהצלחה\n⚠️ ${data.anomaly}`);
-        }
-      }
-      setInput("");
-    } catch (error) {
-      setStatus("❌ שגיאה, נסה שוב");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function fetchSummary() {
-    const response = await fetch(
-      `https://budget-ai-production-1c70.up.railway.app/summary?workspaceId=${workspaceId}`,
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      },
-    );
-    const data = await response.json();
-    setSummary(data);
-  }
-
-  async function handleSignIn(idToken) {
-    try {
-      const response = await fetch(
-        "https://budget-ai-production-1c70.up.railway.app/auth/signin",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ idToken }),
-        },
-      );
-      const data = await response.json();
-
-      setToken(idToken);
-      setUser(data.user);
-      setWorkspaceId(data.workspaceId);
-
-      await AsyncStorage.setItem("token", idToken);
-      await AsyncStorage.setItem("user", JSON.stringify(data.user));
-      await AsyncStorage.setItem("workspaceId", data.workspaceId);
-    } catch (error) {
-      console.error("Sign in error:", error);
-      setStatus("❌ שגיאה בהתחברות");
-    }
-  }
   async function restoreSession() {
     try {
       const savedToken = await AsyncStorage.getItem("token");
       const savedUser = await AsyncStorage.getItem("user");
       const savedWorkspaceId = await AsyncStorage.getItem("workspaceId");
-
       if (
         savedToken &&
         savedUser &&
@@ -141,197 +51,123 @@ export default function App() {
       }
     } catch (error) {
       await AsyncStorage.clear();
+    } finally {
+      setLoading(false);
     }
   }
+
+  async function handleSignIn(accessToken) {
+    try {
+      const response = await fetch(
+        "https://budget-ai-production-1c70.up.railway.app/auth/signin",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ idToken: accessToken }),
+        },
+      );
+      const data = await response.json();
+      setToken(accessToken);
+      setUser(data.user);
+      setWorkspaceId(data.workspaceId);
+      await AsyncStorage.setItem("token", accessToken);
+      await AsyncStorage.setItem("user", JSON.stringify(data.user));
+      await AsyncStorage.setItem("workspaceId", data.workspaceId);
+    } catch (error) {
+      console.error("Sign in error:", error);
+    }
+  }
+
+  async function handleSignOut() {
+    await AsyncStorage.clear();
+    setUser(null);
+    setToken(null);
+    setWorkspaceId(null);
+  }
+
+  if (loading) return null;
+
   if (!user) {
+    return <LoginScreen request={request} promptAsync={promptAsync} />;
+  }
+
+  if (!workspaceId) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.title}>💰 AI Budget Manager</Text>
-        <Text style={styles.subtitle}>נהל את ההוצאות שלך בעברית</Text>
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => promptAsync()}
-          disabled={!request}
-        >
-          <Text style={styles.buttonText}>🔐 התחבר עם Google</Text>
-        </TouchableOpacity>
-        {status ? <Text style={styles.status}>{status}</Text> : null}
-      </View>
+      <WorkspaceSetupScreen
+        user={user}
+        token={token}
+        onWorkspaceReady={(id) => setWorkspaceId(id)}
+      />
     );
   }
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={styles.container}
-    >
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <ScrollView
-          contentContainerStyle={{ flexGrow: 1 }}
-          keyboardShouldPersistTaps="handled"
+    <NavigationContainer>
+      <Tab.Navigator
+        screenOptions={{
+          headerShown: false,
+          tabBarStyle: {
+            backgroundColor: "#0e1318",
+            borderTopColor: "#1e2832",
+          },
+          tabBarActiveTintColor: "#00e5a0",
+          tabBarInactiveTintColor: "#6a7a8a",
+        }}
+      >
+        <Tab.Screen
+          name="Home"
+          options={{
+            tabBarLabel: "בית",
+            tabBarIcon: ({ color }) => (
+              <Text style={{ color, fontSize: 20 }}>💰</Text>
+            ),
+          }}
         >
-          {/* Title */}
-          <Text style={styles.title}>💰 AI Budget Manager</Text>
-
-          <TouchableOpacity
-            onPress={async () => {
-              const appURL =
-                "googlesheets://spreadsheets/d/178wlPrfvbr8ZE25PcnZFdBTn1CsfIwr7LUduTqsIA4U";
-              const webURL =
-                "https://docs.google.com/spreadsheets/d/178wlPrfvbr8ZE25PcnZFdBTn1CsfIwr7LUduTqsIA4U";
-              const canOpen = await Linking.canOpenURL(appURL);
-              Linking.openURL(canOpen ? appURL : webURL);
-            }}
-          >
-            <Text style={styles.sheetLink}>📋 פתח גיליון</Text>
-          </TouchableOpacity>
-
-          {/* Input */}
-          <TextInput
-            style={styles.input}
-            placeholder={placeholder}
-            placeholderTextColor="#6a7a8a"
-            value={input}
-            onChangeText={setInput}
-            multiline
-          />
-
-          {/* Submit button or spinner */}
-          {loading ? (
-            <ActivityIndicator size="large" color="#00e5a0" />
-          ) : (
-            <TouchableOpacity style={styles.button} onPress={handleSubmit}>
-              <Text style={styles.buttonText}>שמור</Text>
-            </TouchableOpacity>
+          {() => (
+            <HomeScreen token={token} workspaceId={workspaceId} user={user} />
           )}
-
-          {/* Summary button */}
-          <TouchableOpacity style={styles.summaryButton} onPress={fetchSummary}>
-            <Text style={styles.summaryButtonText}>📊 הצג סיכום חודשי</Text>
-          </TouchableOpacity>
-
-          {/* Status message */}
-          {status ? <Text style={styles.status}>{status}</Text> : null}
-
-          {/* Transaction confirmation card */}
-          {transaction && (
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>✅ עסקה נשמרה</Text>
-              <Text style={styles.cardText}>📝 {transaction.description}</Text>
-              <Text style={styles.cardText}>🏷️ {transaction.category}</Text>
-              <Text style={styles.cardText}>
-                💵 {transaction.amount} {transaction.currency}
-              </Text>
-              <Text style={styles.cardText}>📅 {transaction.date}</Text>
-            </View>
+        </Tab.Screen>
+        <Tab.Screen
+          name="History"
+          options={{
+            tabBarLabel: "היסטוריה",
+            tabBarIcon: ({ color }) => (
+              <Text style={{ color, fontSize: 20 }}>📋</Text>
+            ),
+          }}
+        >
+          {() => <HistoryScreen token={token} workspaceId={workspaceId} />}
+        </Tab.Screen>
+        <Tab.Screen
+          name="Summary"
+          options={{
+            tabBarLabel: "סיכום",
+            tabBarIcon: ({ color }) => (
+              <Text style={{ color, fontSize: 20 }}>📊</Text>
+            ),
+          }}
+        >
+          {() => <SummaryScreen token={token} workspaceId={workspaceId} />}
+        </Tab.Screen>
+        <Tab.Screen
+          name="Workspace"
+          options={{
+            tabBarLabel: "סביבה",
+            tabBarIcon: ({ color }) => (
+              <Text style={{ color, fontSize: 20 }}>⚙️</Text>
+            ),
+          }}
+        >
+          {() => (
+            <WorkspaceScreen
+              token={token}
+              workspaceId={workspaceId}
+              user={user}
+              onSignOut={handleSignOut}
+            />
           )}
-
-          {/* Summary card */}
-          {summary && (
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>📊 סיכום הוצאות</Text>
-              {Object.entries(summary.summary).map(([category, amount]) => (
-                <Text key={category} style={styles.cardText}>
-                  {category}: {amount.toFixed(2)} ₪
-                </Text>
-              ))}
-              <Text style={styles.cardTitle}>
-                סה״כ: {summary.total.toFixed(2)} ₪
-              </Text>
-            </View>
-          )}
-        </ScrollView>
-      </TouchableWithoutFeedback>
-    </KeyboardAvoidingView>
+        </Tab.Screen>
+      </Tab.Navigator>
+    </NavigationContainer>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#080c10",
-    padding: 24,
-    paddingTop: 60,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#00e5a0",
-    marginBottom: 32,
-    textAlign: "center",
-  },
-  input: {
-    backgroundColor: "#0e1318",
-    color: "#eaf0f8",
-    borderColor: "#1e2832",
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 16,
-    fontSize: 16,
-    minHeight: 80,
-    marginBottom: 16,
-  },
-  button: {
-    backgroundColor: "#00e5a0",
-    padding: 16,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  buttonText: {
-    color: "#080c10",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  status: {
-    color: "#eaf0f8",
-    textAlign: "center",
-    marginTop: 16,
-    fontSize: 14,
-  },
-  card: {
-    backgroundColor: "#0e1318",
-    borderColor: "#00e5a0",
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 16,
-    marginTop: 24,
-    gap: 8,
-  },
-  cardTitle: {
-    color: "#00e5a0",
-    fontWeight: "bold",
-    fontSize: 16,
-    marginBottom: 8,
-  },
-  cardText: {
-    color: "#eaf0f8",
-    fontSize: 14,
-  },
-  sheetLink: {
-    color: "#4da8ff",
-    textAlign: "center",
-    marginBottom: 24,
-    fontSize: 14,
-    textDecorationLine: "underline",
-  },
-  summaryButton: {
-    backgroundColor: "#1e2832",
-    padding: 16,
-    borderRadius: 8,
-    alignItems: "center",
-    marginTop: 12,
-    borderColor: "#00e5a0",
-    borderWidth: 1,
-  },
-  summaryButtonText: {
-    color: "#00e5a0",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  subtitle: {
-    color: "#6a7a8a",
-    textAlign: "center",
-    fontSize: 16,
-    marginBottom: 48,
-  },
-});

@@ -7,14 +7,17 @@ const {
   parseTransaction,
 } = require("./services/agents.js");
 const { saveTransaction } = require("./services/saveTransaction");
-const { getTransactions } = require("./services/getTransactions");
+const {
+  getTransactions,
+  deleteTransaction,
+} = require("./services/getTransactions");
 const { verifyToken } = require("./services/authMiddleware");
 const Anthropic = require("@anthropic-ai/sdk");
 require("dotenv").config();
 const { admin } = require("./services/firebaseAdmin");
 const { db } = require("./services/firebase");
 const { doc, getDoc } = require("firebase/firestore");
-const { createWorkspace } = require("./services/workspace");
+const { createWorkspace, joinWorkspace } = require("./services/workspace");
 
 const app = express();
 app.use(cors());
@@ -163,6 +166,68 @@ app.post("/auth/signin", async (req, res) => {
   } catch (error) {
     console.error("Auth error:", error.message);
     res.status(401).json({ error: "Authentication failed" });
+  }
+});
+
+app.post("/workspace/create", verifyToken, async (req, res) => {
+  try {
+    const { name } = req.body;
+    const userEmail = req.user.email;
+    const userName = req.user.name || userEmail;
+    const workspaceId = await createWorkspace(userEmail, userName, name);
+    res.json({ workspaceId });
+  } catch (error) {
+    console.error("Create workspace error:", error.message);
+    res.status(500).json({ error: "Failed to create workspace" });
+  }
+});
+
+app.post("/workspace/join", verifyToken, async (req, res) => {
+  try {
+    const { inviteCode } = req.body;
+    const userEmail = req.user.email;
+    const { joinWorkspace } = require("./services/workspace");
+    const workspaceId = await joinWorkspace(userEmail, inviteCode);
+    res.json({ workspaceId });
+  } catch (error) {
+    console.error("Join workspace error:", error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get("/transactions", verifyToken, async (req, res) => {
+  try {
+    const { workspaceId } = req.query;
+    const transactions = await getTransactions(workspaceId);
+    res.json({ transactions });
+  } catch (error) {
+    console.error("Get transactions error:", error.message);
+    res.status(500).json({ error: "Failed to get transactions" });
+  }
+});
+
+app.delete("/transaction/:id", verifyToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { workspaceId } = req.query;
+    await deleteTransaction(workspaceId, id);
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Delete transaction error:", error.message);
+    res.status(500).json({ error: "Failed to delete transaction" });
+  }
+});
+app.get("/workspace/:id", verifyToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const workspaceDoc = await getDoc(doc(db, "workspaces", id));
+    if (!workspaceDoc.exists()) {
+      return res.status(404).json({ error: "Workspace not found" });
+    }
+    res.json({ id: workspaceDoc.id, ...workspaceDoc.data() });
+  } catch (error) {
+    console.error("Get workspace error:", error.message);
+    res.status(500).json({ error: "Failed to get workspace" });
   }
 });
 
