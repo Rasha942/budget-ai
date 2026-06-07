@@ -28,8 +28,8 @@ export default function App() {
   const { request, response, promptAsync } = useGoogleAuth();
   useEffect(() => {
     if (response?.type === "success") {
-      const { id_token } = response.params;
-      handleSignIn(id_token);
+      const { access_token } = response.params;
+      handleSignIn(access_token);
     }
   }, [response]);
   useEffect(() => {

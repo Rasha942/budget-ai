@@ -8,7 +8,7 @@ const Anthropic = require("@anthropic-ai/sdk");
 require("dotenv").config();
 const { admin } = require("./services/firebaseAdmin");
 const { db } = require("./services/firebase");
-const { doc, getDoc, setDoc } = require("firebase/firestore");
+const { doc, getDoc } = require("firebase/firestore");
 const { createWorkspace } = require("./services/workspace");
 
 const app = express();
@@ -47,9 +47,9 @@ async function fetchPlaceholder() {
       {
         role: "user",
         content: `Write a single Hebrew placeholder for a budget app input field.
-        Topic: ${randomTopic}
-        Style: ${randomStyle}
-        Max 8 words. Return only the text, no explanation.`,
+      Topic: ${randomTopic}
+      Style: ${randomStyle}
+      Max 8 words. Return only the text, no explanation.`,
       },
     ],
   });
@@ -81,13 +81,11 @@ app.get("/summary", verifyToken, async (req, res) => {
   try {
     const { workspaceId } = req.query;
     const transactions = await getTransactions(workspaceId);
-
     const summary = {};
     transactions.forEach((t) => {
       if (!summary[t.category]) summary[t.category] = 0;
       summary[t.category] += t.amount;
     });
-
     const total = Object.values(summary).reduce((sum, val) => sum + val, 0);
     res.json({ summary, total });
   } catch (error) {
@@ -96,34 +94,56 @@ app.get("/summary", verifyToken, async (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 3000;
 app.post("/auth/signin", async (req, res) => {
   try {
     const { idToken } = req.body;
-    const decodedToken = await admin.auth().verifyIdToken(idToken);
-    const { email, name } = decodedToken;
+
+    const firebaseToken = await admin
+      .auth()
+      .verifyIdToken(idToken)
+      .catch(async () => {
+        const userResponse = await fetch(
+          `https://www.googleapis.com/oauth2/v3/userinfo?access_token=${idToken}`,
+        );
+        const userInfo = await userResponse.json();
+
+        let firebaseUser;
+        try {
+          firebaseUser = await admin.auth().getUserByEmail(userInfo.email);
+        } catch {
+          firebaseUser = await admin.auth().createUser({
+            email: userInfo.email,
+            displayName: userInfo.name,
+          });
+        }
+        return {
+          email: firebaseUser.email,
+          name: firebaseUser.displayName,
+          uid: firebaseUser.uid,
+        };
+      });
+
+    const email = firebaseToken.email;
+    const name = firebaseToken.name || firebaseToken.displayName;
 
     const userRef = doc(db, "users", email);
     const userDoc = await getDoc(userRef);
 
     let workspaceId;
-
     if (userDoc.exists()) {
       workspaceId = userDoc.data().workspaceIds[0];
     } else {
       workspaceId = await createWorkspace(email, name, `${name}'s Budget`);
     }
 
-    res.json({
-      user: { email, name },
-      workspaceId,
-    });
+    res.json({ user: { email, name }, workspaceId });
   } catch (error) {
     console.error("Auth error:", error.message);
     res.status(401).json({ error: "Authentication failed" });
   }
 });
 
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
