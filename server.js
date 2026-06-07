@@ -1,6 +1,11 @@
 const express = require("express");
 const cors = require("cors");
-const { parseTransaction } = require("./services/parseTransaction");
+const {
+  orchestrate,
+  analyze,
+  detectAnomaly,
+  parseTransaction,
+} = require("./services/agents.js");
 const { saveTransaction } = require("./services/saveTransaction");
 const { getTransactions } = require("./services/getTransactions");
 const { verifyToken } = require("./services/authMiddleware");
@@ -69,11 +74,29 @@ app.post("/transaction", verifyToken, async (req, res) => {
   try {
     const { text, workspaceId } = req.body;
     const userEmail = req.user.email;
+
+    const transactions = await getTransactions(workspaceId);
+
+    const decision = await orchestrate(text, transactions);
+
+    if (decision.action === "answer") {
+      const answer = await analyze(text, transactions);
+      return res.json({ type: "answer", message: answer });
+    }
+
     const transaction = await parseTransaction(text);
     await saveTransaction(transaction, workspaceId, userEmail);
-    res.json({ transaction });
+
+    const anomaly = await detectAnomaly(transaction, transactions);
+
+    res.json({
+      type: "saved",
+      transaction,
+      anomaly: anomaly || null,
+    });
   } catch (error) {
-    res.status(500).json({ error: "Failed to save transaction" });
+    console.error("Transaction error:", error.message);
+    res.status(500).json({ error: "Failed to process input" });
   }
 });
 

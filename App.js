@@ -51,6 +51,7 @@ export default function App() {
     setLoading(true);
     setStatus("");
     setTransaction(null);
+    setSummary(null);
 
     try {
       const response = await fetch(
@@ -59,14 +60,24 @@ export default function App() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`, // ← add this
+            Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ text: input, workspaceId }), // ← add workspaceId
+          body: JSON.stringify({ text: input, workspaceId }),
         },
       );
       const data = await response.json();
-      setTransaction(data.transaction);
-      setStatus("✅ נשמר בהצלחה");
+
+      if (data.type === "answer") {
+        // analyst answered a question
+        setStatus(data.message);
+      } else {
+        // transaction was saved
+        setTransaction(data.transaction);
+        setStatus("✅ נשמר בהצלחה");
+        if (data.anomaly) {
+          setStatus(`✅ נשמר בהצלחה\n⚠️ ${data.anomaly}`);
+        }
+      }
       setInput("");
     } catch (error) {
       setStatus("❌ שגיאה, נסה שוב");
