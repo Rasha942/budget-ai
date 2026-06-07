@@ -85,6 +85,11 @@ export default function App() {
     setWorkspaceId(null);
   }
 
+  async function handleWorkspaceDeleted() {
+    await AsyncStorage.removeItem("workspaceId");
+    setWorkspaceId(null);
+  }
+
   if (loading) return null;
 
   if (!user) {
@@ -164,6 +169,7 @@ export default function App() {
               workspaceId={workspaceId}
               user={user}
               onSignOut={handleSignOut}
+              onWorkspaceDeleted={handleWorkspaceDeleted}
             />
           )}
         </Tab.Screen>

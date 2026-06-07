@@ -18,6 +18,7 @@ export default function WorkspaceScreen({
   workspaceId,
   user,
   onSignOut,
+  onWorkspaceDeleted,
 }) {
   const [workspace, setWorkspace] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -59,25 +60,30 @@ export default function WorkspaceScreen({
       console.error("Error renaming workspace:", error);
     }
   }
-
   function confirmDelete() {
-    Alert.alert(
-      "מחיקת סביבה",
-      `האם אתה בטוח שברצונך למחוק את "${workspace.name}"? פעולה זו אינה הפיכה.`,
-      [
-        { text: "ביטול", style: "cancel" },
-        { text: "מחק", style: "destructive", onPress: handleDelete },
-      ],
-    );
+    if (typeof window !== "undefined") {
+      const confirmed = window.confirm(
+        `האם אתה בטוח שברצונך למחוק את "${workspace.name}"? פעולה זו אינה הפיכה.`,
+      );
+      if (confirmed) handleDelete();
+    } else {
+      Alert.alert(
+        "מחיקת סביבה",
+        `האם אתה בטוח שברצונך למחוק את "${workspace.name}"? פעולה זו אינה הפיכה.`,
+        [
+          { text: "ביטול", style: "cancel" },
+          { text: "מחק", style: "destructive", onPress: handleDelete },
+        ],
+      );
+    }
   }
-
   async function handleDelete() {
     try {
       await fetch(`${SERVER}/workspace/${workspaceId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
-      onSignOut();
+      onWorkspaceDeleted();
     } catch (error) {
       console.error("Error deleting workspace:", error);
     }
