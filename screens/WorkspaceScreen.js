@@ -7,6 +7,8 @@ import {
   ScrollView,
   ActivityIndicator,
   Share,
+  TextInput,
+  Alert,
 } from "react-native";
 
 const SERVER = "https://budget-ai-production-1c70.up.railway.app";
@@ -19,6 +21,8 @@ export default function WorkspaceScreen({
 }) {
   const [workspace, setWorkspace] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState(false);
+  const [newName, setNewName] = useState("");
 
   useEffect(() => {
     fetchWorkspace();
@@ -31,10 +35,51 @@ export default function WorkspaceScreen({
       });
       const data = await response.json();
       setWorkspace(data);
+      setNewName(data.name);
     } catch (error) {
       console.error("Error fetching workspace:", error);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleRename() {
+    try {
+      await fetch(`${SERVER}/workspace/${workspaceId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ name: newName }),
+      });
+      setWorkspace({ ...workspace, name: newName });
+      setEditing(false);
+    } catch (error) {
+      console.error("Error renaming workspace:", error);
+    }
+  }
+
+  function confirmDelete() {
+    Alert.alert(
+      "מחיקת סביבה",
+      `האם אתה בטוח שברצונך למחוק את "${workspace.name}"? פעולה זו אינה הפיכה.`,
+      [
+        { text: "ביטול", style: "cancel" },
+        { text: "מחק", style: "destructive", onPress: handleDelete },
+      ],
+    );
+  }
+
+  async function handleDelete() {
+    try {
+      await fetch(`${SERVER}/workspace/${workspaceId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      onSignOut();
+    } catch (error) {
+      console.error("Error deleting workspace:", error);
     }
   }
 
@@ -60,7 +105,29 @@ export default function WorkspaceScreen({
       {workspace && (
         <>
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>{workspace.name}</Text>
+            {editing ? (
+              <>
+                <TextInput
+                  style={styles.input}
+                  value={newName}
+                  onChangeText={setNewName}
+                  placeholderTextColor="#6a7a8a"
+                />
+                <TouchableOpacity style={styles.button} onPress={handleRename}>
+                  <Text style={styles.buttonText}>שמור שם</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => setEditing(false)}>
+                  <Text style={styles.cancel}>ביטול</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                <Text style={styles.cardTitle}>{workspace.name}</Text>
+                <TouchableOpacity onPress={() => setEditing(true)}>
+                  <Text style={styles.editLink}>✏️ שנה שם</Text>
+                </TouchableOpacity>
+              </>
+            )}
             <Text style={styles.label}>בעלים: {workspace.ownerName}</Text>
             <Text style={styles.label}>חברים: {workspace.members?.length}</Text>
           </View>
@@ -86,6 +153,10 @@ export default function WorkspaceScreen({
               </Text>
             ))}
           </View>
+
+          <TouchableOpacity style={styles.deleteButton} onPress={confirmDelete}>
+            <Text style={styles.deleteText}>🗑️ מחק סביבה</Text>
+          </TouchableOpacity>
         </>
       )}
 
@@ -126,6 +197,26 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   label: { color: "#eaf0f8", fontSize: 14, marginBottom: 4 },
+  input: {
+    backgroundColor: "#080c10",
+    color: "#eaf0f8",
+    borderColor: "#00e5a0",
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    marginBottom: 8,
+  },
+  button: {
+    backgroundColor: "#00e5a0",
+    padding: 12,
+    borderRadius: 8,
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  buttonText: { color: "#080c10", fontWeight: "bold" },
+  editLink: { color: "#4da8ff", fontSize: 13, marginBottom: 8 },
+  cancel: { color: "#6a7a8a", textAlign: "center", marginTop: 4 },
   inviteCode: {
     color: "#00e5a0",
     fontSize: 32,
@@ -140,22 +231,23 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 12,
   },
-  button: {
-    backgroundColor: "#00e5a0",
-    padding: 12,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  buttonText: { color: "#080c10", fontWeight: "bold" },
   member: { color: "#eaf0f8", fontSize: 14, paddingVertical: 4 },
-  signOutButton: {
+  deleteButton: {
     borderColor: "#ff6b6b",
     borderWidth: 1,
     padding: 16,
     borderRadius: 8,
     alignItems: "center",
-    marginTop: 8,
+    marginBottom: 16,
+  },
+  deleteText: { color: "#ff6b6b", fontWeight: "bold", fontSize: 16 },
+  signOutButton: {
+    borderColor: "#6a7a8a",
+    borderWidth: 1,
+    padding: 16,
+    borderRadius: 8,
+    alignItems: "center",
     marginBottom: 48,
   },
-  signOutText: { color: "#ff6b6b", fontWeight: "bold", fontSize: 16 },
+  signOutText: { color: "#6a7a8a", fontWeight: "bold", fontSize: 16 },
 });

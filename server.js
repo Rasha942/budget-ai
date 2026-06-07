@@ -16,8 +16,12 @@ const Anthropic = require("@anthropic-ai/sdk");
 require("dotenv").config();
 const { admin } = require("./services/firebaseAdmin");
 const { db } = require("./services/firebase");
-const { doc, getDoc } = require("firebase/firestore");
-const { createWorkspace, joinWorkspace } = require("./services/workspace");
+const { doc, getDoc, updateDoc, deleteDoc } = require("firebase/firestore");
+const {
+  createWorkspace,
+  joinWorkspace,
+  deleteWorkspace,
+} = require("./services/workspace");
 
 const app = express();
 app.use(cors());
@@ -186,7 +190,6 @@ app.post("/workspace/join", verifyToken, async (req, res) => {
   try {
     const { inviteCode } = req.body;
     const userEmail = req.user.email;
-    const { joinWorkspace } = require("./services/workspace");
     const workspaceId = await joinWorkspace(userEmail, inviteCode);
     res.json({ workspaceId });
   } catch (error) {
@@ -231,6 +234,30 @@ app.get("/workspace/:id", verifyToken, async (req, res) => {
   }
 });
 
+app.put("/workspace/:id", verifyToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name } = req.body;
+    const { updateDoc } = require("firebase/firestore");
+    await updateDoc(doc(db, "workspaces", id), { name });
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Update workspace error:", error.message);
+    res.status(500).json({ error: "Failed to update workspace" });
+  }
+});
+
+app.delete("/workspace/:id", verifyToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userEmail = req.user.email;
+    await deleteWorkspace(id, userEmail);
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Delete workspace error:", error.message);
+    res.status(500).json({ error: "Failed to delete workspace" });
+  }
+});
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

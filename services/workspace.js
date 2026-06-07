@@ -89,4 +89,28 @@ async function joinWorkspace(userEmail, inviteCode) {
 
   return workspaceDoc.id;
 }
-module.exports = { createWorkspace, joinWorkspace };
+
+async function deleteWorkspace(workspaceId, userEmail) {
+  const transactionsRef = collection(
+    db,
+    "workspaces",
+    workspaceId,
+    "transactions",
+  );
+  const transactionsSnap = await getDocs(transactionsRef);
+  for (const doc of transactionsSnap.docs) {
+    await deleteDoc(doc.ref);
+  }
+
+  await deleteDoc(doc(db, "workspaces", workspaceId));
+
+  const userRef = doc(db, "users", userEmail);
+  const userDoc = await getDoc(userRef);
+  if (userDoc.exists()) {
+    const workspaceIds = userDoc
+      .data()
+      .workspaceIds.filter((id) => id !== workspaceId);
+    await updateDoc(userRef, { workspaceIds });
+  }
+}
+module.exports = { createWorkspace, joinWorkspace, deleteWorkspace };
