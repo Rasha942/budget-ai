@@ -111,14 +111,25 @@ export default function App() {
     }
   }
   async function restoreSession() {
-    const savedToken = await AsyncStorage.getItem("token");
-    const savedUser = await AsyncStorage.getItem("user");
-    const savedWorkspaceId = await AsyncStorage.getItem("workspaceId");
+    try {
+      const savedToken = await AsyncStorage.getItem("token");
+      const savedUser = await AsyncStorage.getItem("user");
+      const savedWorkspaceId = await AsyncStorage.getItem("workspaceId");
 
-    if (savedToken && savedUser && savedWorkspaceId) {
-      setToken(savedToken);
-      setUser(JSON.parse(savedUser));
-      setWorkspaceId(savedWorkspaceId);
+      if (
+        savedToken &&
+        savedUser &&
+        savedWorkspaceId &&
+        savedUser !== "undefined"
+      ) {
+        setToken(savedToken);
+        setUser(JSON.parse(savedUser));
+        setWorkspaceId(savedWorkspaceId);
+      } else {
+        await AsyncStorage.clear();
+      }
+    } catch (error) {
+      await AsyncStorage.clear();
     }
   }
   if (!user) {
