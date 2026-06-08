@@ -94,41 +94,41 @@ export default function HistoryScreen({ token, workspaceId }) {
           <View style={styles.card}>
             {item.id === editingId ? (
               <>
+                <Text style={styles.fieldLabel}>תיאור</Text>
                 <TextInput
                   style={styles.input}
                   value={editedFields.description}
                   onChangeText={(text) =>
                     setEditedFields({ ...editedFields, description: text })
                   }
-                  placeholder="תיאור"
                   placeholderTextColor="#6a7a8a"
                 />
+                <Text style={styles.fieldLabel}>קטגוריה</Text>
                 <TextInput
                   style={styles.input}
                   value={editedFields.category}
                   onChangeText={(text) =>
                     setEditedFields({ ...editedFields, category: text })
                   }
-                  placeholder="קטגוריה"
                   placeholderTextColor="#6a7a8a"
                 />
+                <Text style={styles.fieldLabel}>סכום</Text>
                 <TextInput
                   style={styles.input}
                   value={String(editedFields.amount)}
                   onChangeText={(text) =>
                     setEditedFields({ ...editedFields, amount: text })
                   }
-                  placeholder="סכום"
                   placeholderTextColor="#6a7a8a"
                   keyboardType="numeric"
                 />
+                <Text style={styles.fieldLabel}>תאריך</Text>
                 <TextInput
                   style={styles.input}
                   value={editedFields.date}
                   onChangeText={(text) =>
                     setEditedFields({ ...editedFields, date: text })
                   }
-                  placeholder="תאריך"
                   placeholderTextColor="#6a7a8a"
                 />
                 <View style={styles.cardFooter}>
@@ -203,6 +203,7 @@ const styles = StyleSheet.create({
   edit: { color: "#4da8ff", fontSize: 12 },
   save: { color: "#00e5a0", fontSize: 12, fontWeight: "bold" },
   cancel: { color: "#6a7a8a", fontSize: 12 },
+  fieldLabel: { color: "#6a7a8a", fontSize: 11, marginBottom: 2 },
   input: {
     backgroundColor: "#080c10",
     color: "#eaf0f8",
