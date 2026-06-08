@@ -6,8 +6,18 @@ const {
   orderBy,
   doc,
   deleteDoc,
+  updateDoc,
+  addDoc,
 } = require("firebase/firestore");
 require("dotenv").config();
+
+async function saveTransaction(transaction, workspaceId, userEmail) {
+  await addDoc(collection(db, "workspaces", workspaceId, "transactions"), {
+    ...transaction,
+    addedBy: userEmail,
+    createdAt: new Date(),
+  });
+}
 
 async function getTransactions(workspaceId) {
   const q = query(
@@ -24,4 +34,16 @@ async function deleteTransaction(workspaceId, transactionId) {
   );
 }
 
-module.exports = { getTransactions, deleteTransaction };
+async function updateTransaction(workspaceId, transactionId, update) {
+  await updateDoc(
+    doc(db, "workspaces", workspaceId, "transactions", transactionId),
+    update,
+  );
+}
+
+module.exports = {
+  getTransactions,
+  deleteTransaction,
+  saveTransaction,
+  updateTransaction,
+};

@@ -7,12 +7,15 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
+  TextInput,
 } from "react-native";
 
 const SERVER = "https://budget-ai-production-1c70.up.railway.app";
 
 export default function HistoryScreen({ token, workspaceId }) {
   const [transactions, setTransactions] = useState([]);
+  const [editingId, setEditingId] = useState(null);
+  const [editedFields, setEditedFields] = useState({});
   const [loading, setLoading] = useState(true);
 
   useFocusEffect(
@@ -33,6 +36,34 @@ export default function HistoryScreen({ token, workspaceId }) {
       console.error("Error fetching transactions:", error);
     } finally {
       setLoading(false);
+    }
+  }
+
+  function handleUpdate(transaction) {
+    setEditingId(transaction.id);
+    setEditedFields(transaction);
+  }
+
+  async function handleUpdateSave() {
+    try {
+      await fetch(
+        `${SERVER}/transaction/${editingId}?workspaceId=${workspaceId}`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(editedFields),
+        },
+      );
+      setTransactions(
+        transactions.map((t) => (t.id === editingId ? editedFields : t)),
+      );
+      setEditingId(null);
+      setEditedFields({});
+    } catch (error) {
+      console.error("Update transaction error:", error);
     }
   }
 
@@ -61,17 +92,72 @@ export default function HistoryScreen({ token, workspaceId }) {
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <View style={styles.card}>
-            <View style={styles.cardHeader}>
-              <Text style={styles.category}>{item.category}</Text>
-              <Text style={styles.amount}>{item.amount} ₪</Text>
-            </View>
-            <Text style={styles.description}>{item.description}</Text>
-            <View style={styles.cardFooter}>
-              <Text style={styles.date}>{item.date}</Text>
-              <TouchableOpacity onPress={() => deleteTransaction(item.id)}>
-                <Text style={styles.delete}>🗑️ מחק</Text>
-              </TouchableOpacity>
-            </View>
+            {item.id === editingId ? (
+              <>
+                <TextInput
+                  style={styles.input}
+                  value={editedFields.description}
+                  onChangeText={(text) =>
+                    setEditedFields({ ...editedFields, description: text })
+                  }
+                  placeholder="תיאור"
+                  placeholderTextColor="#6a7a8a"
+                />
+                <TextInput
+                  style={styles.input}
+                  value={editedFields.category}
+                  onChangeText={(text) =>
+                    setEditedFields({ ...editedFields, category: text })
+                  }
+                  placeholder="קטגוריה"
+                  placeholderTextColor="#6a7a8a"
+                />
+                <TextInput
+                  style={styles.input}
+                  value={String(editedFields.amount)}
+                  onChangeText={(text) =>
+                    setEditedFields({ ...editedFields, amount: text })
+                  }
+                  placeholder="סכום"
+                  placeholderTextColor="#6a7a8a"
+                  keyboardType="numeric"
+                />
+                <TextInput
+                  style={styles.input}
+                  value={editedFields.date}
+                  onChangeText={(text) =>
+                    setEditedFields({ ...editedFields, date: text })
+                  }
+                  placeholder="תאריך"
+                  placeholderTextColor="#6a7a8a"
+                />
+                <View style={styles.cardFooter}>
+                  <TouchableOpacity onPress={handleUpdateSave}>
+                    <Text style={styles.save}>💾 שמור</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => setEditingId(null)}>
+                    <Text style={styles.cancel}>ביטול</Text>
+                  </TouchableOpacity>
+                </View>
+              </>
+            ) : (
+              <>
+                <View style={styles.cardHeader}>
+                  <Text style={styles.category}>{item.category}</Text>
+                  <Text style={styles.amount}>{item.amount} ₪</Text>
+                </View>
+                <Text style={styles.description}>{item.description}</Text>
+                <View style={styles.cardFooter}>
+                  <Text style={styles.date}>{item.date}</Text>
+                  <TouchableOpacity onPress={() => deleteTransaction(item.id)}>
+                    <Text style={styles.delete}>🗑️ מחק</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => handleUpdate(item)}>
+                    <Text style={styles.edit}>✏️ עריכה</Text>
+                  </TouchableOpacity>
+                </View>
+              </>
+            )}
           </View>
         )}
         ListEmptyComponent={<Text style={styles.empty}>אין עסקאות עדיין</Text>}
@@ -114,5 +200,23 @@ const styles = StyleSheet.create({
   cardFooter: { flexDirection: "row", justifyContent: "space-between" },
   date: { color: "#6a7a8a", fontSize: 12 },
   delete: { color: "#ff6b6b", fontSize: 12 },
-  empty: { color: "#6a7a8a", textAlign: "center", marginTop: 48, fontSize: 16 },
+  edit: { color: "#4da8ff", fontSize: 12 },
+  save: { color: "#00e5a0", fontSize: 12, fontWeight: "bold" },
+  cancel: { color: "#6a7a8a", fontSize: 12 },
+  input: {
+    backgroundColor: "#080c10",
+    color: "#eaf0f8",
+    borderColor: "#1e2832",
+    borderWidth: 1,
+    borderRadius: 6,
+    padding: 8,
+    fontSize: 14,
+    marginBottom: 8,
+  },
+  empty: {
+    color: "#6a7a8a",
+    textAlign: "center",
+    marginTop: 48,
+    fontSize: 16,
+  },
 });

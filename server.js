@@ -6,11 +6,12 @@ const {
   detectAnomaly,
   parseTransaction,
 } = require("./services/agents.js");
-const { saveTransaction } = require("./services/saveTransaction");
 const {
   getTransactions,
   deleteTransaction,
-} = require("./services/getTransactions");
+  saveTransaction,
+  updateTransaction,
+} = require("./services/Transactions.js");
 const { verifyToken } = require("./services/authMiddleware");
 const Anthropic = require("@anthropic-ai/sdk");
 require("dotenv").config();
@@ -219,6 +220,19 @@ app.delete("/transaction/:id", verifyToken, async (req, res) => {
   } catch (error) {
     console.error("Delete transaction error:", error.message);
     res.status(500).json({ error: "Failed to delete transaction" });
+  }
+});
+
+app.put("/transaction/:id", verifyToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const update = req.body;
+    const { workspaceId } = req.query;
+    await updateTransaction(workspaceId, id, update);
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Update transaction error", error.message);
+    res.status(500).json({ error: "Failed to update transaction" });
   }
 });
 app.get("/workspace/:id", verifyToken, async (req, res) => {
