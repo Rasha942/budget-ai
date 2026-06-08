@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useCallback } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 import {
   View,
   Text,
@@ -13,7 +14,11 @@ const SERVER = "https://budget-ai-production-1c70.up.railway.app";
 export default function SummaryScreen({ token, workspaceId }) {
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(false);
-
+  useFocusEffect(
+    useCallback(() => {
+      fetchSummary();
+    }, []),
+  );
   async function fetchSummary() {
     setLoading(true);
     try {

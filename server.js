@@ -21,6 +21,7 @@ const {
   createWorkspace,
   joinWorkspace,
   deleteWorkspace,
+  generateInviteCode,
 } = require("./services/workspace");
 
 const app = express();
@@ -223,11 +224,26 @@ app.delete("/transaction/:id", verifyToken, async (req, res) => {
 app.get("/workspace/:id", verifyToken, async (req, res) => {
   try {
     const { id } = req.params;
-    const workspaceDoc = await getDoc(doc(db, "workspaces", id));
+    let workspaceDoc = await getDoc(doc(db, "workspaces", id));
     if (!workspaceDoc.exists()) {
       return res.status(404).json({ error: "Workspace not found" });
     }
-    res.json({ id: workspaceDoc.id, ...workspaceDoc.data() });
+    let data = workspaceDoc.data();
+    const isExpired = new Date() > new Date(data.inviteExpiry.toDate());
+    if (isExpired) {
+      await updateDoc(doc(db, "workspaces", id), {
+        inviteCode: generateInviteCode(),
+        inviteExpiry: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      });
+      workspaceDoc = await getDoc(doc(db, "workspaces", id));
+      data = workspaceDoc.data();
+    }
+    res.json({
+      id: workspaceDoc.id,
+      ...data,
+      inviteExpiry: data.inviteExpiry?.toDate().toISOString(),
+      createdAt: data.createdAt?.toDate().toISOString(),
+    });
   } catch (error) {
     console.error("Get workspace error:", error.message);
     res.status(500).json({ error: "Failed to get workspace" });

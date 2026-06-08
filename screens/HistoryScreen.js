@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useCallback } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 import {
   View,
   Text,
@@ -14,9 +15,11 @@ export default function HistoryScreen({ token, workspaceId }) {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchTransactions();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      fetchTransactions();
+    }, []),
+  );
 
   async function fetchTransactions() {
     try {

@@ -144,7 +144,7 @@ export default function WorkspaceScreen({
             <Text style={styles.expiry}>
               {workspace.inviteUsed
                 ? "⚠️ קוד כבר שומש"
-                : `תוקף עד: ${new Date(workspace.inviteExpiry?.seconds * 1000).toLocaleDateString()}`}
+                : `תוקף עד: ${new Date(workspace.inviteExpiry).toLocaleDateString()}`}
             </Text>
             <TouchableOpacity style={styles.button} onPress={shareInviteCode}>
               <Text style={styles.buttonText}>שתף קוד הזמנה</Text>

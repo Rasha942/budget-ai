@@ -67,13 +67,15 @@ async function joinWorkspace(userEmail, inviteCode) {
     throw new Error("קוד ההזמנה כבר שומש");
   }
 
-  if (new Date() > workspace.inviteExpiry.toDate()) {
+  if (new Date() > new date(data.inviteExpiry)) {
     throw new Error("קוד ההזמנה פג תוקף");
   }
 
   await updateDoc(workspaceDoc.ref, {
     members: [...workspace.members, userEmail],
-    inviteUsed: true,
+    inviteUsed: false,
+    inviteCode: generateInviteCode(),
+    inviteExpiry: new Date(Date.now() + 24 * 60 * 60 * 1000),
   });
 
   const userRef = doc(db, "users", userEmail);
@@ -118,4 +120,9 @@ async function deleteWorkspace(workspaceId, userEmail) {
   }
 }
 
-module.exports = { createWorkspace, joinWorkspace, deleteWorkspace };
+module.exports = {
+  createWorkspace,
+  joinWorkspace,
+  deleteWorkspace,
+  generateInviteCode,
+};

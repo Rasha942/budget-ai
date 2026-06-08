@@ -24,7 +24,10 @@ Examples:
     messages: [
       {
         role: "user",
-        content: userInput,
+        content: `transaction history:${JSON.stringify(transactions, null, 2)} 
+        
+        
+        User question:${userInput}`,
       },
     ],
   });
