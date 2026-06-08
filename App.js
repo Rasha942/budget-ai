@@ -3,7 +3,7 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Text } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useGoogleAuth } from "./auth";
+import { useGoogleAuth, getFirebaseIdToken } from "./auth";
 
 import LoginScreen from "./screens/LoginScreen";
 import WorkspaceSetupScreen from "./screens/WorkspaceSetupScreen";
@@ -56,21 +56,24 @@ export default function App() {
     }
   }
 
-  async function handleSignIn(accessToken) {
+  async function handleSignIn(googleAccessToken) {
     try {
+      const firebaseIdToken = await getFirebaseIdToken(googleAccessToken);
+
       const response = await fetch(
         "https://budget-ai-production-1c70.up.railway.app/auth/signin",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ idToken: accessToken }),
+          body: JSON.stringify({ idToken: firebaseIdToken }),
         },
       );
       const data = await response.json();
-      setToken(accessToken);
+
+      setToken(firebaseIdToken);
       setUser(data.user);
       setWorkspaceId(data.workspaceId);
-      await AsyncStorage.setItem("token", accessToken);
+      await AsyncStorage.setItem("token", firebaseIdToken);
       await AsyncStorage.setItem("user", JSON.stringify(data.user));
       await AsyncStorage.setItem("workspaceId", data.workspaceId);
     } catch (error) {
@@ -101,7 +104,10 @@ export default function App() {
       <WorkspaceSetupScreen
         user={user}
         token={token}
-        onWorkspaceReady={(id) => setWorkspaceId(id)}
+        onWorkspaceReady={async (id) => {
+          setWorkspaceId(id);
+          await AsyncStorage.setItem("workspaceId", id); // fix: persist after joining/creating
+        }}
       />
     );
   }

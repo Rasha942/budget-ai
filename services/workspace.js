@@ -9,6 +9,7 @@ const {
   where,
   updateDoc,
   getDocs,
+  deleteDoc,
 } = require("firebase/firestore");
 require("dotenv").config();
 
@@ -69,10 +70,12 @@ async function joinWorkspace(userEmail, inviteCode) {
   if (new Date() > workspace.inviteExpiry.toDate()) {
     throw new Error("קוד ההזמנה פג תוקף");
   }
+
   await updateDoc(workspaceDoc.ref, {
     members: [...workspace.members, userEmail],
     inviteUsed: true,
   });
+
   const userRef = doc(db, "users", userEmail);
   const userDoc = await getDoc(userRef);
 
@@ -91,6 +94,7 @@ async function joinWorkspace(userEmail, inviteCode) {
 }
 
 async function deleteWorkspace(workspaceId, userEmail) {
+  // Delete all transactions in the workspace
   const transactionsRef = collection(
     db,
     "workspaces",
@@ -98,8 +102,8 @@ async function deleteWorkspace(workspaceId, userEmail) {
     "transactions",
   );
   const transactionsSnap = await getDocs(transactionsRef);
-  for (const doc of transactionsSnap.docs) {
-    await deleteDoc(doc.ref);
+  for (const transaction of transactionsSnap.docs) {
+    await deleteDoc(transaction.ref);
   }
 
   await deleteDoc(doc(db, "workspaces", workspaceId));
@@ -113,4 +117,5 @@ async function deleteWorkspace(workspaceId, userEmail) {
     await updateDoc(userRef, { workspaceIds });
   }
 }
+
 module.exports = { createWorkspace, joinWorkspace, deleteWorkspace };
