@@ -18,15 +18,19 @@ import Constants, { ExecutionEnvironment } from "expo-constants";
 
 const isExpoGo =
   Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+
+console.log("executionEnvironment:", Constants.executionEnvironment);
+console.log("isExpoGo:", isExpoGo);
+console.log("Platform.OS:", Platform.OS);
 let GoogleSignin;
 if (!isExpoGo && Platform.OS === "android") {
   GoogleSignin =
     require("@react-native-google-signin/google-signin").GoogleSignin;
   GoogleSignin.configure({
     webClientId:
-      "56065825946-uvqskud3dkvrk78agojdr5n2nqgl7dp1.apps.googleusercontent.com",
+      "878270972278-22344lcv57s76up31nc8iauiolmv3t3f.apps.googleusercontent.com",
     androidClientId:
-      "56065825946-gcje8b2m6aaqskg3ien48t6gapdgbust.apps.googleusercontent.com",
+      "878270972278-l72lphaan5gqg49b96kluc435f8vnb5a.apps.googleusercontent.com",
   });
 }
 WebBrowser.maybeCompleteAuthSession();
@@ -65,9 +69,9 @@ export function useGoogleAuth() {
     iosClientId:
       "869872520581-m0mnan19clvbbcid2i5qubvt48sa9g2u.apps.googleusercontent.com",
     webClientId:
-      "56065825946-uvqskud3dkvrk78agojdr5n2nqgl7dp1.apps.googleusercontent.com",
+      "878270972278-22344lcv57s76up31nc8iauiolmv3t3f.apps.googleusercontent.com",
     androidClientId:
-      "56065825946-gcje8b2m6aaqskg3ien48t6gapdgbust.apps.googleusercontent.com",
+      "878270972278-l72lphaan5gqg49b96kluc435f8vnb5a.apps.googleusercontent.com",
   });
 
   return { request, response, promptAsync };
