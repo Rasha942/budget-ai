@@ -1,5 +1,7 @@
 const express = require("express");
 const cors = require("cors");
+const ExcelJS = require("exceljs");
+
 const {
   orchestrate,
   analyze,
@@ -294,4 +296,62 @@ app.delete("/workspace/:id", verifyToken, async (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+});
+
+app.post("/export", verifyToken, async (req, res) => {
+  try {
+    const { transactions, fromDate, toDate } = req.body;
+
+    const workbook = new ExcelJS.Workbook();
+
+    const transSheet = workbook.addWorksheet("עסקאות");
+    transSheet.addRow([
+      "תאריך",
+      "תיאור",
+      "קטגוריה",
+      "סכום",
+      "מטבע",
+      "נוסף על ידי",
+    ]);
+
+    transactions.forEach((t) => {
+      transSheet.addRow([
+        t.date,
+        t.description,
+        t.category,
+        t.amount,
+        t.currency,
+        t.addedBy,
+      ]);
+    });
+    const summarySheet = workbook.addWorksheet("סיכום");
+    summarySheet.addRow(["קטגוריה", "סכום"]);
+
+    const summary = transactions.reduce((acc, t) => {
+      if (!acc[t.category]) acc[t.category] = 0;
+      acc[t.category] += Number(t.amount);
+      return acc;
+    }, {});
+
+    Object.entries(summary).forEach(([category, amount]) => {
+      summarySheet.addRow([category, amount]);
+    });
+
+    const total = Object.values(summary).reduce((sum, val) => sum + val, 0);
+    summarySheet.addRow(["סה״כ", total]);
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    );
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=budget-${fromDate}-${toDate}.xlsx`,
+    );
+
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (error) {
+    console.error("Export error:", error.message);
+    res.status(500).json({ error: "Failed to export" });
+  }
 });

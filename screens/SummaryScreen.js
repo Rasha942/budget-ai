@@ -54,7 +54,32 @@ export default function SummaryScreen({ token, workspaceId }) {
       setLoading(false);
     }
   }
-  async function exportToExcel() {}
+  async function exportToExcel() {
+    try {
+      const response = await fetch(`${SERVER}/export`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ transactions: filtered, fromDate, toDate }),
+      });
+      const blob = await response.blob();
+      const reader = new FileReader();
+      reader.readAsDataURL(blob);
+      reader.onload = async () => {
+        const base64 = reader.result.split(",")[1];
+        const fileUri =
+          FileSystem.documentDirectory + `budget-${fromDate}-${toDate}.xlsx`;
+        await FileSystem.writeAsStringAsync(fileUri, base64, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+        await Sharing.shareAsync(fileUri);
+      };
+    } catch (error) {
+      console.error("Export error:", error);
+    }
+  }
 
   return (
     <ScrollView style={styles.container}>
@@ -153,6 +178,9 @@ export default function SummaryScreen({ token, workspaceId }) {
           </View>
         </View>
       )}
+      <TouchableOpacity style={styles.exportButton} onPress={exportToExcel}>
+        <Text style={styles.exportButtonText}>📤 ייצא לאקסל</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 }
@@ -182,7 +210,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   fieldLabel: { color: "#6a7a8a", fontSize: 11, marginBottom: 4 },
-
+  exportButton: {
+    borderColor: "#00e5a0",
+    borderWidth: 1,
+    padding: 16,
+    borderRadius: 8,
+    alignItems: "center",
+    marginTop: 16,
+  },
+  exportButtonText: { color: "#00e5a0", fontSize: 16, fontWeight: "bold" },
   card: {
     backgroundColor: "#0e1318",
     borderColor: "#00e5a0",

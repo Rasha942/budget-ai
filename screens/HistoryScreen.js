@@ -157,6 +157,7 @@ export default function HistoryScreen({ token, workspaceId }) {
                   <Text style={styles.amount}>{item.amount} ₪</Text>
                 </View>
                 <Text style={styles.description}>{item.description}</Text>
+                <Text style={styles.addedBy}>נוסף על ידי: {item.addedBy}</Text>
                 <View style={styles.cardFooter}>
                   <Text style={styles.date}>{item.date}</Text>
                   <TouchableOpacity onPress={() => deleteTransaction(item.id)}>
@@ -213,6 +214,7 @@ const styles = StyleSheet.create({
   },
   category: { color: "#00e5a0", fontWeight: "bold", fontSize: 13 },
   amount: { color: "#eaf0f8", fontWeight: "bold", fontSize: 15 },
+  addedBy: { color: "#6a7a8a", fontSize: 11, marginBottom: 8 },
   description: { color: "#eaf0f8", fontSize: 14, marginBottom: 8 },
   cardFooter: { flexDirection: "row", justifyContent: "space-between" },
   date: { color: "#6a7a8a", fontSize: 12 },
