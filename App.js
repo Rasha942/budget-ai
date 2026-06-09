@@ -89,10 +89,12 @@ export default function App() {
       }
       setToken(firebaseIdToken);
       setUser(data.user);
-      setWorkspaceId(data.workspaceId);
+      if (data.workspaceId) {
+        setWorkspaceId(data.workspaceId);
+        await AsyncStorage.setItem("workspaceId", data.workspaceId);
+      }
       await AsyncStorage.setItem("token", firebaseIdToken);
       await AsyncStorage.setItem("user", JSON.stringify(data.user));
-      await AsyncStorage.setItem("workspaceId", data.workspaceId);
     } catch (error) {
       console.error("Sign in error:", error);
     }
