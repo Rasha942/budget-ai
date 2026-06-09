@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { Text } from "react-native";
+import { Text, AppState } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useGoogleAuth, getFirebaseIdToken } from "./auth";
+import { useGoogleAuth, getFirebaseIdToken, refreshToken } from "./auth";
 
 import LoginScreen from "./screens/LoginScreen";
 import WorkspaceSetupScreen from "./screens/WorkspaceSetupScreen";
@@ -23,6 +23,19 @@ export default function App() {
 
   useEffect(() => {
     restoreSession();
+  }, []);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", async (state) => {
+      if (state === "active") {
+        const freshToken = await refreshToken();
+        if (freshToken) {
+          setToken(freshToken);
+          await AsyncStorage.setItem("token", freshToken);
+        }
+      }
+    });
+    return () => subscription.remove();
   }, []);
 
   useEffect(() => {

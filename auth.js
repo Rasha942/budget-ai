@@ -59,3 +59,9 @@ export async function signInWithEmail(email, password) {
   );
   return userCredential.user.getIdToken();
 }
+
+export async function refreshToken() {
+  const currentUser = auth.currentUser;
+  if (!currentUser) return null;
+  return currentUser.getIdToken(true);
+}
