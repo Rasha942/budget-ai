@@ -8,7 +8,9 @@ import {
   TouchableOpacity,
   ScrollView,
 } from "react-native";
-
+import * as FileSystem from "expo-file-system";
+import * as Sharing from "expo-sharing";
+import * as XLSX from "xlsx";
 const SERVER = "https://budget-ai-production-1c70.up.railway.app";
 
 export default function SummaryScreen({ token, workspaceId }) {
@@ -34,6 +36,7 @@ export default function SummaryScreen({ token, workspaceId }) {
       setLoading(false);
     }
   }
+  exportToExcel;
 
   return (
     <ScrollView style={styles.container}>

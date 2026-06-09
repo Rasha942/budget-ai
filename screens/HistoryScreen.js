@@ -3,12 +3,13 @@ import { useFocusEffect } from "@react-navigation/native";
 import {
   View,
   Text,
-  FlatList,
+  SectionList,
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
   TextInput,
 } from "react-native";
+import { groupByMonth } from "../utils";
 
 const SERVER = "https://budget-ai-production-1c70.up.railway.app";
 
@@ -18,6 +19,13 @@ export default function HistoryScreen({ token, workspaceId }) {
   const [editedFields, setEditedFields] = useState({});
   const [loading, setLoading] = useState(true);
 
+  const sections =
+    transactions.length > 0
+      ? Object.entries(groupByMonth(transactions)).map(([title, data]) => ({
+          title,
+          data,
+        }))
+      : [];
   useFocusEffect(
     useCallback(() => {
       fetchTransactions();
@@ -87,9 +95,11 @@ export default function HistoryScreen({ token, workspaceId }) {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>📋 היסטוריה</Text>
-      <FlatList
-        data={transactions}
-        keyExtractor={(item) => item.id}
+      <SectionList
+        sections={sections}
+        renderSectionHeader={({ section: { title } }) => (
+          <Text style={styles.sectionHeader}>{title}</Text>
+        )}
         renderItem={({ item }) => (
           <View style={styles.card}>
             {item.id === editingId ? (
@@ -172,6 +182,13 @@ const styles = StyleSheet.create({
     backgroundColor: "#080c10",
     padding: 24,
     paddingTop: 60,
+  },
+  sectionHeader: {
+    color: "#00e5a0",
+    fontSize: 16,
+    fontWeight: "bold",
+    paddingVertical: 8,
+    backgroundColor: "#080c10",
   },
   loader: { flex: 1, backgroundColor: "#080c10" },
   title: {
