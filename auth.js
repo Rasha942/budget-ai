@@ -5,6 +5,8 @@ import {
   getAuth,
   GoogleAuthProvider,
   signInWithCredential,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
 } from "firebase/auth";
 
 WebBrowser.maybeCompleteAuthSession();
@@ -37,6 +39,23 @@ export function useGoogleAuth() {
 export async function getFirebaseIdToken(googleAccessToken) {
   const credential = GoogleAuthProvider.credential(null, googleAccessToken);
   const userCredential = await signInWithCredential(auth, credential);
-  const idToken = await userCredential.user.getIdToken();
-  return idToken;
+  return userCredential.user.getIdToken();
+}
+
+export async function registerWithEmail(email, password) {
+  const userCredential = await createUserWithEmailAndPassword(
+    auth,
+    email,
+    password,
+  );
+
+  return userCredential.user.getIdToken();
+}
+export async function signInWithEmail(email, password) {
+  const userCredential = await signInWithEmailAndPassword(
+    auth,
+    email,
+    password,
+  );
+  return userCredential.user.getIdToken();
 }

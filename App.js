@@ -96,7 +96,13 @@ export default function App() {
   if (loading) return null;
 
   if (!user) {
-    return <LoginScreen request={request} promptAsync={promptAsync} />;
+    return (
+      <LoginScreen
+        request={request}
+        promptAsync={promptAsync}
+        onSignIn={handleSignIn}
+      />
+    );
   }
 
   if (!workspaceId) {
