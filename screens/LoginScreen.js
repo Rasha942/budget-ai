@@ -57,11 +57,18 @@ export default function LoginScreen({ request, promptAsync, onSignIn }) {
         <View style={styles.buttonGroup}>
           <TouchableOpacity
             style={styles.button}
-            onPress={() => {
+            onPress={async () => {
               if (Platform.OS === "android") {
-                signInWithGoogleAndroid()
-                  .then(onSignIn)
-                  .catch((err) => console.error(err));
+                setLoading(true);
+                setError("");
+                try {
+                  const token = await signInWithGoogleAndroid();
+                  await onSignIn(token);
+                } catch (err) {
+                  setError("שגיאה: " + err.message);
+                } finally {
+                  setLoading(false);
+                }
               } else {
                 promptAsync();
               }
