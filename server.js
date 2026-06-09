@@ -248,7 +248,10 @@ app.get("/workspace/:id", verifyToken, async (req, res) => {
       return res.status(404).json({ error: "Workspace not found" });
     }
     let data = workspaceDoc.data();
-    const isExpired = new Date() > new Date(data.inviteExpiry.toDate());
+    const expiryDate = data.inviteExpiry?.toDate
+      ? data.inviteExpiry.toDate()
+      : new Date(data.inviteExpiry);
+    const isExpired = new Date() > expiryDate;
     if (isExpired) {
       await updateDoc(doc(db, "workspaces", id), {
         inviteCode: generateInviteCode(),
@@ -260,8 +263,12 @@ app.get("/workspace/:id", verifyToken, async (req, res) => {
     res.json({
       id: workspaceDoc.id,
       ...data,
-      inviteExpiry: data.inviteExpiry?.toDate().toISOString(),
-      createdAt: data.createdAt?.toDate().toISOString(),
+      inviteExpiry: data.inviteExpiry?.toDate
+        ? data.inviteExpiry.toDate().toISOString()
+        : data.inviteExpiry,
+      createdAt: data.createdAt?.toDate
+        ? data.createdAt.toDate().toISOString()
+        : data.createdAt,
     });
   } catch (error) {
     console.error("Get workspace error:", error.message);
