@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import {
+  Platform,
   View,
   Text,
   SectionList,
@@ -8,6 +9,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   TextInput,
+  Alert,
 } from "react-native";
 import { groupByMonth } from "../utils";
 
@@ -160,7 +162,24 @@ export default function HistoryScreen({ token, workspaceId }) {
                 <Text style={styles.addedBy}>נוסף על ידי: {item.addedBy}</Text>
                 <View style={styles.cardFooter}>
                   <Text style={styles.date}>{item.date}</Text>
-                  <TouchableOpacity onPress={() => deleteTransaction(item.id)}>
+                  <TouchableOpacity
+                    onPress={() => {
+                      if (Platform.OS === "web") {
+                        if (window.confirm("האם אתה בטוח שברצונך למחוק?")) {
+                          deleteTransaction(item.id);
+                        }
+                      } else {
+                        Alert.alert("מחק עסקה", "האם אתה בטוח?", [
+                          { text: "ביטול", style: "cancel" },
+                          {
+                            text: "מחק",
+                            style: "destructive",
+                            onPress: () => deleteTransaction(item.id),
+                          },
+                        ]);
+                      }
+                    }}
+                  >
                     <Text style={styles.delete}>🗑️ מחק</Text>
                   </TouchableOpacity>
                   <TouchableOpacity onPress={() => handleUpdate(item)}>

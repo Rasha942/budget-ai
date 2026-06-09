@@ -28,6 +28,7 @@ export function groupByMonth(transactions) {
 }
 
 export function filterByDateRange(transactions, from, to) {
+  if (!transactions) return [];
   return transactions.filter((t) => {
     const parts = t.date.split("-");
     const date = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
