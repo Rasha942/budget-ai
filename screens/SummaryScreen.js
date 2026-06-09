@@ -10,9 +10,8 @@ import {
   TouchableOpacity,
   TextInput,
 } from "react-native";
-import * as FileSystem from "expo-file-system";
+import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
-// import ExcelJS from "exceljs";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { getDefaultDates, filterByDateRange } from "../utils";
 
@@ -22,6 +21,7 @@ export default function SummaryScreen({ token, workspaceId }) {
   const { fromDate: defaultFrom, toDate: defaultTo } = getDefaultDates();
 
   const [transactions, setTransactions] = useState([]);
+  const [workspaceName, setWorkspaceName] = useState("");
   const [loading, setLoading] = useState(false);
   const [fromDate, setFromDate] = useState(defaultFrom);
   const [toDate, setToDate] = useState(defaultTo);
@@ -48,6 +48,15 @@ export default function SummaryScreen({ token, workspaceId }) {
       );
       const data = await response.json();
       setTransactions(data.transactions || []);
+
+      const workspaceResponse = await fetch(
+        `${SERVER}/workspace/${workspaceId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+      const workspaceData = await workspaceResponse.json();
+      setWorkspaceName(workspaceData.name);
     } catch (error) {
       console.error("Error fetching transactions:", error);
     } finally {
@@ -64,23 +73,35 @@ export default function SummaryScreen({ token, workspaceId }) {
         },
         body: JSON.stringify({ transactions: filtered, fromDate, toDate }),
       });
+
+      if (Platform.OS === "web") {
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${workspaceName}-${fromDate}-${toDate}.xlsx`;
+        a.click();
+        return;
+      }
+
       const blob = await response.blob();
       const reader = new FileReader();
       reader.readAsDataURL(blob);
       reader.onload = async () => {
-        const base64 = reader.result.split(",")[1];
-        const fileUri =
-          FileSystem.documentDirectory + `budget-${fromDate}-${toDate}.xlsx`;
-        await FileSystem.writeAsStringAsync(fileUri, base64, {
-          encoding: FileSystem.EncodingType.Base64,
-        });
-        await Sharing.shareAsync(fileUri);
+        try {
+          const base64 = reader.result.split(",")[1];
+          const fileUri =
+            FileSystem.cacheDirectory +
+            `${workspaceName}-${fromDate}-${toDate}.xlsx`;
+          await Sharing.shareAsync(fileUri);
+        } catch (err) {
+          console.error("File save error:", err);
+        }
       };
     } catch (error) {
       console.error("Export error:", error);
     }
   }
-
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.title}>📊 סיכום חודשי</Text>
