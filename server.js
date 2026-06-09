@@ -156,7 +156,8 @@ app.post("/auth/signin", async (req, res) => {
       });
 
     const email = firebaseToken.email;
-    const name = firebaseToken.name || firebaseToken.displayName;
+    const name =
+      firebaseToken.name || firebaseToken.displayName || email.split("@")[0];
 
     const userRef = doc(db, "users", email);
     const userDoc = await getDoc(userRef);

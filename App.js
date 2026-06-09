@@ -28,7 +28,7 @@ export default function App() {
   useEffect(() => {
     if (response?.type === "success") {
       const { access_token } = response.params;
-      handleSignIn(access_token);
+      getFirebaseIdToken(access_token).then(handleSignIn);
     }
   }, [response]);
 
@@ -56,10 +56,8 @@ export default function App() {
     }
   }
 
-  async function handleSignIn(googleAccessToken) {
+  async function handleSignIn(firebaseIdToken) {
     try {
-      const firebaseIdToken = await getFirebaseIdToken(googleAccessToken);
-
       const response = await fetch(
         "https://budget-ai-production-1c70.up.railway.app/auth/signin",
         {
@@ -69,7 +67,6 @@ export default function App() {
         },
       );
       const data = await response.json();
-
       setToken(firebaseIdToken);
       setUser(data.user);
       setWorkspaceId(data.workspaceId);
