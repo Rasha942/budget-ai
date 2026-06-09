@@ -7,7 +7,7 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from "react-native";
-import { registerWithEmail } from "../auth";
+import { linkEmailPassword } from "../auth";
 
 export default function SetPasswordScreen({ onPasswordSet, user }) {
   const [password, setPassword] = useState("");
@@ -24,7 +24,7 @@ export default function SetPasswordScreen({ onPasswordSet, user }) {
     setLoading(true);
     setError("");
     try {
-      const firebasIdToken = await registerWithEmail(user.email, password);
+      const firebasIdToken = await linkEmailPassword(user.email, password);
       onPasswordSet();
     } catch (error) {
       setError("שגיאה בהגדרת סיסמא");

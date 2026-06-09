@@ -7,6 +7,8 @@ import {
   signInWithCredential,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  EmailAuthProvider,
+  linkWithCredential,
 } from "firebase/auth";
 
 WebBrowser.maybeCompleteAuthSession();
@@ -59,7 +61,10 @@ export async function signInWithEmail(email, password) {
   );
   return userCredential.user.getIdToken();
 }
-
+export async function linkEmailPassword(email, password) {
+  const credential = EmailAuthProvider.credential(email, password);
+  await linkWithCredential(auth.currentUser, credential);
+}
 export async function refreshToken() {
   const currentUser = auth.currentUser;
   if (!currentUser) return null;
