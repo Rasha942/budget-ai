@@ -11,7 +11,7 @@ import HomeScreen from "./screens/HomeScreen";
 import HistoryScreen from "./screens/HistoryScreen";
 import SummaryScreen from "./screens/SummaryScreen";
 import WorkspaceScreen from "./screens/WorkspaceScreen";
-
+import SetPasswordScreen from "./screens/SetPasswordScreen";
 const Tab = createBottomTabNavigator();
 
 export default function App() {
@@ -20,6 +20,7 @@ export default function App() {
   const [workspaceId, setWorkspaceId] = useState(null);
   const [loading, setLoading] = useState(true);
   const { request, response, promptAsync } = useGoogleAuth();
+  const [needsPassword, setNeedsPassword] = useState(false);
 
   useEffect(() => {
     restoreSession();
@@ -80,6 +81,9 @@ export default function App() {
         },
       );
       const data = await response.json();
+      if (data.isNewUser) {
+        setNeedsPassword(true);
+      }
       setToken(firebaseIdToken);
       setUser(data.user);
       setWorkspaceId(data.workspaceId);
@@ -114,7 +118,15 @@ export default function App() {
       />
     );
   }
-
+  if (needsPassword) {
+    return (
+      <SetPasswordScreen
+        onPasswordSet={() => setNeedsPassword(false)}
+        user={user}
+        token={token}
+      />
+    );
+  }
   if (!workspaceId) {
     return (
       <WorkspaceSetupScreen

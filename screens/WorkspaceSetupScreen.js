@@ -15,7 +15,7 @@ export default function WorkspaceSetupScreen({
   token,
   onWorkspaceReady,
 }) {
-  const [mode, setMode] = useState(null); // "create" or "join"
+  const [mode, setMode] = useState(null);
   const [name, setName] = useState("");
   const [inviteCode, setInviteCode] = useState("");
   const [loading, setLoading] = useState(false);
