@@ -1,59 +1,146 @@
 import React, { useState, useCallback } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import {
+  Platform,
   View,
   Text,
   StyleSheet,
   ActivityIndicator,
-  TouchableOpacity,
   ScrollView,
+  TouchableOpacity,
+  TextInput,
 } from "react-native";
 import * as FileSystem from "expo-file-system";
 import * as Sharing from "expo-sharing";
-import * as XLSX from "xlsx";
+// import ExcelJS from "exceljs";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { getDefaultDates, filterByDateRange } from "../utils";
+
 const SERVER = "https://budget-ai-production-1c70.up.railway.app";
 
 export default function SummaryScreen({ token, workspaceId }) {
-  const [summary, setSummary] = useState(null);
+  const { fromDate: defaultFrom, toDate: defaultTo } = getDefaultDates();
+
+  const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [fromDate, setFromDate] = useState(defaultFrom);
+  const [toDate, setToDate] = useState(defaultTo);
+  const [showFromPicker, setShowFromPicker] = useState(false);
+  const [showToPicker, setShowToPicker] = useState(false);
   useFocusEffect(
     useCallback(() => {
-      fetchSummary();
+      fetchTransactions();
     }, []),
   );
-  async function fetchSummary() {
+  const filtered = filterByDateRange(transactions, fromDate, toDate);
+  const summary = filtered.reduce((acc, t) => {
+    if (!acc[t.category]) acc[t.category] = 0;
+    acc[t.category] += Number(t.amount);
+    return acc;
+  }, {});
+  const total = Object.values(summary).reduce((sum, val) => sum + val, 0);
+  async function fetchTransactions() {
     setLoading(true);
     try {
       const response = await fetch(
-        `${SERVER}/summary?workspaceId=${workspaceId}`,
+        `${SERVER}/transactions?workspaceId=${workspaceId}`,
         { headers: { Authorization: `Bearer ${token}` } },
       );
       const data = await response.json();
-      setSummary(data);
+      setTransactions(data.transactions || []);
     } catch (error) {
-      console.error("Error fetching summary:", error);
+      console.error("Error fetching transactions:", error);
     } finally {
       setLoading(false);
     }
   }
-  exportToExcel;
+  async function exportToExcel() {}
 
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.title}>📊 סיכום חודשי</Text>
 
-      <TouchableOpacity style={styles.button} onPress={fetchSummary}>
-        <Text style={styles.buttonText}>טען סיכום</Text>
-      </TouchableOpacity>
-
       {loading && (
         <ActivityIndicator color="#00e5a0" style={{ marginTop: 32 }} />
       )}
 
-      {summary && (
+      <View style={styles.dateRow}>
+        <View style={styles.dateField}>
+          <Text style={styles.fieldLabel}>מתאריך</Text>
+          {Platform.OS === "web" ? (
+            <TextInput
+              style={styles.dateInput}
+              value={fromDate}
+              onChangeText={setFromDate}
+              placeholder="YYYY-MM-DD"
+              placeholderTextColor="#6a7a8a"
+            />
+          ) : (
+            <>
+              <TouchableOpacity
+                style={styles.dateInput}
+                onPress={() => setShowFromPicker(true)}
+              >
+                <Text style={{ color: "#eaf0f8" }}>{fromDate}</Text>
+              </TouchableOpacity>
+              <View style={{ backgroundColor: "white", borderRadius: 8 }}>
+                {showFromPicker && (
+                  <DateTimePicker
+                    value={new Date(fromDate)}
+                    themeVariant="light"
+                    display="compact"
+                    mode="date"
+                    onChange={(event, date) => {
+                      setShowFromPicker(false);
+                      if (date) setFromDate(date.toISOString().split("T")[0]);
+                    }}
+                  />
+                )}
+              </View>
+            </>
+          )}
+        </View>
+        <View style={styles.dateField}>
+          <Text style={styles.fieldLabel}>עד תאריך</Text>
+          {Platform.OS === "web" ? (
+            <TextInput
+              style={styles.dateInput}
+              value={toDate}
+              onChangeText={setToDate}
+              placeholder="YYYY-MM-DD"
+              placeholderTextColor="#6a7a8a"
+            />
+          ) : (
+            <>
+              <TouchableOpacity
+                style={styles.dateInput}
+                onPress={() => setShowToPicker(true)}
+              >
+                <Text style={{ color: "#eaf0f8" }}>{toDate}</Text>
+              </TouchableOpacity>
+              <View style={{ backgroundColor: "white", borderRadius: 8 }}>
+                {showToPicker && (
+                  <DateTimePicker
+                    value={new Date(toDate)}
+                    mode="date"
+                    // themeVariant="light"
+                    // display="compact"
+                    onChange={(event, date) => {
+                      setShowToPicker(false);
+                      if (date) setToDate(date.toISOString().split("T")[0]);
+                    }}
+                  />
+                )}
+              </View>
+            </>
+          )}
+        </View>
+      </View>
+
+      {Object.keys(summary).length > 0 && (
         <View style={styles.card}>
           <Text style={styles.cardTitle}>הוצאות לפי קטגוריה</Text>
-          {Object.entries(summary.summary).map(([category, amount]) => (
+          {Object.entries(summary).map(([category, amount]) => (
             <View key={category} style={styles.row}>
               <Text style={styles.category}>{category}</Text>
               <Text style={styles.amount}>{amount.toFixed(2)} ₪</Text>
@@ -62,14 +149,13 @@ export default function SummaryScreen({ token, workspaceId }) {
           <View style={styles.divider} />
           <View style={styles.row}>
             <Text style={styles.total}>סה״כ</Text>
-            <Text style={styles.totalAmount}>{summary.total.toFixed(2)} ₪</Text>
+            <Text style={styles.totalAmount}>{total.toFixed(2)} ₪</Text>
           </View>
         </View>
       )}
     </ScrollView>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -84,14 +170,19 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     textAlign: "center",
   },
-  button: {
-    backgroundColor: "#00e5a0",
-    padding: 16,
+  dateRow: { flexDirection: "row", gap: 12, marginBottom: 24 },
+  dateField: { flex: 1 },
+  dateInput: {
+    backgroundColor: "#0e1318",
+    color: "#eaf0f8",
+    borderColor: "#1e2832",
+    borderWidth: 1,
     borderRadius: 8,
-    alignItems: "center",
-    marginBottom: 24,
+    padding: 12,
+    fontSize: 14,
   },
-  buttonText: { color: "#080c10", fontSize: 16, fontWeight: "bold" },
+  fieldLabel: { color: "#6a7a8a", fontSize: 11, marginBottom: 4 },
+
   card: {
     backgroundColor: "#0e1318",
     borderColor: "#00e5a0",

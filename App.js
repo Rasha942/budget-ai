@@ -57,7 +57,10 @@ export default function App() {
         savedWorkspaceId &&
         savedUser !== "undefined"
       ) {
-        setToken(savedToken);
+        const freshToken = await refreshToken();
+        const tokenToUse = freshToken || savedToken;
+        setToken(tokenToUse);
+        if (freshToken) await AsyncStorage.setItem("token", freshToken);
         setUser(JSON.parse(savedUser));
         setWorkspaceId(savedWorkspaceId);
       } else {

@@ -2,6 +2,8 @@ import * as WebBrowser from "expo-web-browser";
 import * as Google from "expo-auth-session/providers/google";
 import { initializeApp } from "firebase/app";
 import {
+  initializeAuth,
+  getReactNativePersistence,
   getAuth,
   GoogleAuthProvider,
   signInWithCredential,
@@ -10,6 +12,8 @@ import {
   EmailAuthProvider,
   linkWithCredential,
 } from "firebase/auth";
+import { Platform } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -23,8 +27,13 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
 
+const auth =
+  Platform.OS === "web"
+    ? getAuth(app)
+    : initializeAuth(app, {
+        persistence: getReactNativePersistence(AsyncStorage),
+      });
 export function useGoogleAuth() {
   const [request, response, promptAsync] = Google.useAuthRequest({
     expoClientId:

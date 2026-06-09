@@ -39,7 +39,7 @@ export default function HistoryScreen({ token, workspaceId }) {
         { headers: { Authorization: `Bearer ${token}` } },
       );
       const data = await response.json();
-      setTransactions(data.transactions);
+      setTransactions(data.transactions || []);
     } catch (error) {
       console.error("Error fetching transactions:", error);
     } finally {
