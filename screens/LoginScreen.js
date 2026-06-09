@@ -6,8 +6,13 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
+  Platform,
 } from "react-native";
-import { useGoogleAuth, signInWithEmail, registerWithEmail } from "../auth";
+import {
+  signInWithEmail,
+  registerWithEmail,
+  signInWithGoogleAndroid,
+} from "../auth";
 import { AntDesign } from "@expo/vector-icons";
 
 export default function LoginScreen({ request, promptAsync, onSignIn }) {
@@ -52,8 +57,16 @@ export default function LoginScreen({ request, promptAsync, onSignIn }) {
         <View style={styles.buttonGroup}>
           <TouchableOpacity
             style={styles.button}
-            onPress={() => promptAsync()}
-            disabled={!request}
+            onPress={() => {
+              if (Platform.OS === "android") {
+                signInWithGoogleAndroid()
+                  .then(onSignIn)
+                  .catch((err) => console.error(err));
+              } else {
+                promptAsync();
+              }
+            }}
+            disabled={Platform.OS !== "android" && !request}
           >
             <Text style={styles.buttonText}> התחבר עם Google</Text>
             <AntDesign name="google" size={20} color="#080c10" />

@@ -1,6 +1,6 @@
 import * as WebBrowser from "expo-web-browser";
 import * as Google from "expo-auth-session/providers/google";
-
+import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import { initializeApp } from "firebase/app";
 import {
   initializeAuth,
@@ -29,12 +29,28 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 
+GoogleSignin.configure({
+  webClientId:
+    "878270972278-22344lcv57s76up31nc8iauiolmv3t3f.apps.googleusercontent.com",
+  androidClientId:
+    "56065825946-gcje8b2m6aaqskg3ien48t6gapdgbust.apps.googleusercontent.com",
+});
+
 const auth =
   Platform.OS === "web"
     ? getAuth(app)
     : initializeAuth(app, {
         persistence: getReactNativePersistence(AsyncStorage),
       });
+
+export async function signInWithGoogleAndroid() {
+  await GoogleSignin.hasPlayServices();
+  const userInfo = await GoogleSignin.signIn();
+  const { idToken } = userInfo.data;
+  const credential = GoogleAuthProvider.credential(idToken);
+  const userCredential = await signInWithCredential(auth, credential);
+  return userCredential.user.getIdToken();
+}
 export function useGoogleAuth() {
   const [request, response, promptAsync] = Google.useAuthRequest({
     expoClientId:
