@@ -42,6 +42,8 @@ export function useGoogleAuth() {
       "869872520581-m0mnan19clvbbcid2i5qubvt48sa9g2u.apps.googleusercontent.com",
     webClientId:
       "878270972278-22344lcv57s76up31nc8iauiolmv3t3f.apps.googleusercontent.com",
+    androidClientId:
+      "56065825946-gcje8b2m6aaqskg3ien48t6gapdgbust.apps.googleusercontent.com",
   });
 
   return { request, response, promptAsync };

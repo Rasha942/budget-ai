@@ -25,7 +25,8 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.razsharaby.budgetai"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -38,6 +39,12 @@
       "eas": {
         "projectId": "12f30463-b630-418f-80d3-e49732bf374b"
       }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/12f30463-b630-418f-80d3-e49732bf374b"
     }
   }
 }

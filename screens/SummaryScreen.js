@@ -84,6 +84,7 @@ export default function SummaryScreen({ token, workspaceId }) {
         return;
       }
 
+      // native only
       const blob = await response.blob();
       const reader = new FileReader();
       reader.readAsDataURL(blob);
@@ -91,9 +92,21 @@ export default function SummaryScreen({ token, workspaceId }) {
         try {
           const base64 = reader.result.split(",")[1];
           const fileUri =
-            FileSystem.cacheDirectory +
+            FileSystem.documentDirectory +
             `${workspaceName}-${fromDate}-${toDate}.xlsx`;
-          await Sharing.shareAsync(fileUri);
+
+          await FileSystem.writeAsStringAsync(fileUri, base64, {
+            encoding: FileSystem.EncodingType.Base64,
+          });
+          console.log("File written to:", fileUri);
+          const fileInfo = await FileSystem.getInfoAsync(fileUri);
+          console.log("File exists:", fileInfo.exists, "Size:", fileInfo.size);
+
+          await Sharing.shareAsync(fileUri, {
+            mimeType:
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            UTI: "com.microsoft.excel.xlsx",
+          });
         } catch (err) {
           console.error("File save error:", err);
         }
