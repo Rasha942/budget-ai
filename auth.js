@@ -57,6 +57,7 @@ export async function signInWithGoogleAndroid() {
   if (!GoogleSignin) throw new Error("GoogleSignin not available");
   await GoogleSignin.hasPlayServices();
   const userInfo = await GoogleSignin.signIn();
+  console.log("userInfo:", JSON.stringify(userInfo));
   const { idToken } = userInfo.data;
   const credential = GoogleAuthProvider.credential(idToken);
   const userCredential = await signInWithCredential(auth, credential);
