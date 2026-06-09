@@ -9,6 +9,7 @@ import {
   Share,
   TextInput,
   Alert,
+  Platform,
 } from "react-native";
 
 const SERVER = "https://budget-ai-production-1c70.up.railway.app";
@@ -61,7 +62,7 @@ export default function WorkspaceScreen({
     }
   }
   function confirmDelete() {
-    if (typeof window !== "undefined") {
+    if (Platform.OS === "web") {
       const confirmed = window.confirm(
         `האם אתה בטוח שברצונך למחוק את "${workspace.name}"? פעולה זו אינה הפיכה.`,
       );
