@@ -10,11 +10,27 @@ import {
   TouchableOpacity,
   TextInput,
 } from "react-native";
+import { PieChart, BarChart } from "react-native-chart-kit";
+import { Dimensions } from "react-native";
 import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { getDefaultDates, filterByDateRange } from "../utils";
 
+const screenWidth = Dimensions.get("window").width - 48;
+const colors = [
+  //for charts
+  "#00e5a0",
+  "#4da8ff",
+  "#ff6b6b",
+  "#ffd166",
+  "#a78bfa",
+  "#f97316",
+  "#06b6d4",
+  "#ec4899",
+  "#84cc16",
+  "#f59e0b",
+];
 const SERVER = "https://budget-ai-production-1c70.up.railway.app";
 
 export default function SummaryScreen({ token, workspaceId }) {
@@ -39,6 +55,17 @@ export default function SummaryScreen({ token, workspaceId }) {
     return acc;
   }, {});
   const total = Object.values(summary).reduce((sum, val) => sum + val, 0);
+  const pieData = Object.entries(summary).map(([category, amount], index) => ({
+    name: category,
+    amount,
+    color: colors[index % colors.length],
+    legendFontColor: "#eaf0f8",
+    legendFontSize: 12,
+  }));
+  const barData = {
+    labels: Object.keys(summary),
+    datasets: [{ data: Object.values(summary) }],
+  };
   async function fetchTransactions() {
     setLoading(true);
     try {
@@ -182,8 +209,6 @@ export default function SummaryScreen({ token, workspaceId }) {
                   <DateTimePicker
                     value={new Date(toDate)}
                     mode="date"
-                    // themeVariant="light"
-                    // display="compact"
                     onChange={(event, date) => {
                       setShowToPicker(false);
                       if (date) setToDate(date.toISOString().split("T")[0]);
@@ -212,6 +237,39 @@ export default function SummaryScreen({ token, workspaceId }) {
           </View>
         </View>
       )}
+
+      {Object.keys(summary).length > 0 && (
+        <>
+          <Text style={styles.chartTitle}>פילוח לפי קטגוריה</Text>
+          <PieChart
+            data={pieData}
+            width={screenWidth}
+            height={200}
+            chartConfig={{
+              color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
+            }}
+            accessor="amount"
+            backgroundColor="transparent"
+            paddingLeft="15"
+          />
+          <Text style={styles.chartTitle}>הוצאות לפי קטגוריה</Text>
+          <BarChart
+            data={barData}
+            width={screenWidth}
+            height={220}
+            chartConfig={{
+              backgroundColor: "#0e1318",
+              backgroundGradientFrom: "#0e1318",
+              backgroundGradientTo: "#0e1318",
+              decimalPlaces: 0,
+              color: (opacity = 1) => `rgba(0, 229, 160, ${opacity})`,
+              labelColor: (opacity = 1) => `rgba(234, 240, 248, ${opacity})`,
+            }}
+            style={{ borderRadius: 8 }}
+          />
+        </>
+      )}
+
       <TouchableOpacity style={styles.exportButton} onPress={exportToExcel}>
         <Text style={styles.exportButtonText}>📤 ייצא לאקסל</Text>
       </TouchableOpacity>
@@ -253,6 +311,13 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   exportButtonText: { color: "#00e5a0", fontSize: 16, fontWeight: "bold" },
+  chartTitle: {
+    color: "#eaf0f8",
+    fontSize: 14,
+    fontWeight: "bold",
+    marginTop: 24,
+    marginBottom: 8,
+  },
   card: {
     backgroundColor: "#0e1318",
     borderColor: "#00e5a0",
