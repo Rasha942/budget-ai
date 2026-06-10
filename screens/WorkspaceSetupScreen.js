@@ -68,7 +68,9 @@ export default function WorkspaceSetupScreen({
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>ברוך הבא, {user?.name?.split(" ")[0]}!</Text>
+      <Text style={styles.title}>
+        ברוך הבא, {user?.userName || user?.name?.split(" ")[0]}!
+      </Text>
       <Text style={styles.subtitle}>צור סביבת עבודה חדשה או הצטרף לקיימת</Text>
 
       {!mode && (

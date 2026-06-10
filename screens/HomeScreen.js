@@ -78,7 +78,9 @@ export default function HomeScreen({ token, workspaceId, user }) {
         >
           <Text style={styles.title}>💰 AI Budget Manager</Text>
           <Text style={styles.greeting}>
-            שלום, {user?.name?.split(" ")[0]} 👋
+            <Text style={styles.greeting}>
+              שלום, {user?.userName || user?.name?.split(" ")[0]} 👋
+            </Text>{" "}
           </Text>
 
           <TextInput

@@ -102,7 +102,11 @@ app.post("/transaction", verifyToken, async (req, res) => {
     }
 
     const transaction = await parseTransaction(text);
-    await saveTransaction(transaction, workspaceId, userEmail);
+    const userDoc = await getDoc(doc(db, "users", userEmail));
+    const userName = userDoc.exists()
+      ? userDoc.data().userName || userEmail
+      : userEmail;
+    await saveTransaction(transaction, workspaceId, userName);
 
     const anomaly = await detectAnomaly(transaction, transactions);
 
