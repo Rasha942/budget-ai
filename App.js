@@ -18,6 +18,8 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [workspaceId, setWorkspaceId] = useState(null);
+  const [workspaceIds, setWorkspaceIds] = useState([]);
+  const [addingWorkspace, setAddingWorkspace] = useState(false);
   const [loading, setLoading] = useState(true);
   const { request, response, promptAsync } = useGoogleAuth();
   const [needsPassword, setNeedsPassword] = useState(false);
@@ -51,10 +53,13 @@ export default function App() {
       const savedToken = await AsyncStorage.getItem("token");
       const savedUser = await AsyncStorage.getItem("user");
       const savedWorkspaceId = await AsyncStorage.getItem("workspaceId");
+      const savedWorkspaceIds = await AsyncStorage.getItem("workspaceIds");
+
       if (
         savedToken &&
         savedUser &&
         savedWorkspaceId &&
+        savedWorkspaceIds &&
         savedUser !== "undefined"
       ) {
         const freshToken = await refreshToken();
@@ -63,6 +68,7 @@ export default function App() {
         if (freshToken) await AsyncStorage.setItem("token", freshToken);
         setUser(JSON.parse(savedUser));
         setWorkspaceId(savedWorkspaceId);
+        setWorkspaceIds(JSON.parse(savedWorkspaceIds));
       } else {
         await AsyncStorage.clear();
       }
@@ -73,7 +79,7 @@ export default function App() {
     }
   }
 
-  async function handleSignIn(firebaseIdToken) {
+  async function handleSignIn(firebaseIdToken, isGoogleSignIn = false) {
     try {
       const response = await fetch(
         "https://budget-ai-production-1c70.up.railway.app/auth/signin",
@@ -84,7 +90,7 @@ export default function App() {
         },
       );
       const data = await response.json();
-      if (data.isNewUser) {
+      if (data.isNewUser && isGoogleSignIn) {
         setNeedsPassword(true);
       }
       setToken(firebaseIdToken);
@@ -93,8 +99,14 @@ export default function App() {
         setWorkspaceId(data.workspaceId);
         await AsyncStorage.setItem("workspaceId", data.workspaceId);
       }
+      setWorkspaceIds(data.workspaceIds || []);
+
       await AsyncStorage.setItem("token", firebaseIdToken);
       await AsyncStorage.setItem("user", JSON.stringify(data.user));
+      await AsyncStorage.setItem(
+        "workspaceIds",
+        JSON.stringify(data.workspaceIds || []),
+      );
     } catch (error) {
       console.error("Sign in error:", error);
     }
@@ -108,10 +120,17 @@ export default function App() {
   }
 
   async function handleWorkspaceDeleted() {
-    await AsyncStorage.removeItem("workspaceId");
-    setWorkspaceId(null);
+    const newWorkspaceIds = workspaceIds.filter((id) => id !== workspaceId);
+    setWorkspaceIds(newWorkspaceIds);
+    await AsyncStorage.setItem("workspaceIds", JSON.stringify(newWorkspaceIds));
+    const nextWorkspaceId = newWorkspaceIds[0] || null;
+    setWorkspaceId(nextWorkspaceId);
+    if (nextWorkspaceId) {
+      await AsyncStorage.setItem("workspaceId", nextWorkspaceId);
+    } else {
+      await AsyncStorage.removeItem("workspaceId");
+    }
   }
-
   if (loading) return null;
 
   if (!user) {
@@ -140,6 +159,22 @@ export default function App() {
         onWorkspaceReady={async (id) => {
           setWorkspaceId(id);
           await AsyncStorage.setItem("workspaceId", id); // fix: persist after joining/creating
+        }}
+      />
+    );
+  }
+  if (addingWorkspace) {
+    return (
+      <WorkspaceSetupScreen
+        user={user}
+        token={token}
+        onWorkspaceReady={async (id) => {
+          const newIds = [...workspaceIds, id];
+          setWorkspaceIds(newIds);
+          setWorkspaceId(id);
+          await AsyncStorage.setItem("workspaceIds", JSON.stringify(newIds));
+          await AsyncStorage.setItem("workspaceId", id);
+          setAddingWorkspace(false);
         }}
       />
     );
@@ -206,9 +241,14 @@ export default function App() {
             <WorkspaceScreen
               token={token}
               workspaceId={workspaceId}
-              user={user}
+              workspaceIds={workspaceIds}
               onSignOut={handleSignOut}
               onWorkspaceDeleted={handleWorkspaceDeleted}
+              onWorkspaceSwitch={(id) => {
+                setWorkspaceId(id);
+                AsyncStorage.setItem("workspaceId", id);
+              }}
+              onAddWorkspace={() => setAddingWorkspace(true)}
             />
           )}
         </Tab.Screen>

@@ -10,6 +10,7 @@ import {
   TextInput,
   Alert,
   Platform,
+  Modal,
 } from "react-native";
 
 const SERVER = "https://budget-ai-production-1c70.up.railway.app";
@@ -17,18 +18,23 @@ const SERVER = "https://budget-ai-production-1c70.up.railway.app";
 export default function WorkspaceScreen({
   token,
   workspaceId,
-  user,
+  workspaceIds,
   onSignOut,
   onWorkspaceDeleted,
+  onWorkspaceSwitch,
+  onAddWorkspace,
 }) {
   const [workspace, setWorkspace] = useState(null);
+  const [allWorkspaces, setAllWorkspaces] = useState([]);
+  const [showSwitchModal, setShowSwitchModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [newName, setNewName] = useState("");
 
   useEffect(() => {
     fetchWorkspace();
-  }, []);
+    fetchAllWorkspaces();
+  }, [workspaceId]);
 
   async function fetchWorkspace() {
     try {
@@ -43,6 +49,28 @@ export default function WorkspaceScreen({
     } finally {
       setLoading(false);
     }
+  }
+
+  async function fetchAllWorkspaces() {
+    try {
+      const results = await Promise.all(
+        workspaceIds.map(async (id) => {
+          const response = await fetch(`${SERVER}/workspace/${id}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          const data = await response.json();
+          return { id, name: data.name };
+        }),
+      );
+      setAllWorkspaces(results);
+    } catch (error) {
+      console.error("Error fetching workspaces:", error);
+    }
+  }
+
+  function handleSwitch(id) {
+    setShowSwitchModal(false);
+    onWorkspaceSwitch(id);
   }
 
   async function handleRename() {
@@ -61,6 +89,7 @@ export default function WorkspaceScreen({
       console.error("Error renaming workspace:", error);
     }
   }
+
   function confirmDelete() {
     if (Platform.OS === "web") {
       const confirmed = window.confirm(
@@ -78,6 +107,7 @@ export default function WorkspaceScreen({
       );
     }
   }
+
   async function handleDelete() {
     try {
       await fetch(`${SERVER}/workspace/${workspaceId}`, {
@@ -108,6 +138,43 @@ export default function WorkspaceScreen({
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.title}>⚙️ סביבת עבודה</Text>
+
+      {/* Switch workspace modal */}
+      <Modal
+        visible={showSwitchModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowSwitchModal(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowSwitchModal(false)}
+        >
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>סביבות עבודה</Text>
+            {allWorkspaces.map((ws) => (
+              <TouchableOpacity
+                key={ws.id}
+                style={styles.modalItem}
+                onPress={() => handleSwitch(ws.id)}
+              >
+                <Text
+                  style={[
+                    styles.modalItemText,
+                    ws.id === workspaceId && { color: "#00e5a0" },
+                  ]}
+                >
+                  {ws.name} {ws.id === workspaceId ? "✓" : ""}
+                </Text>
+              </TouchableOpacity>
+            ))}
+            <TouchableOpacity onPress={() => setShowSwitchModal(false)}>
+              <Text style={styles.cancel}>סגור</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
 
       {workspace && (
         <>
@@ -160,6 +227,27 @@ export default function WorkspaceScreen({
               </Text>
             ))}
           </View>
+
+          {workspaceIds.length > 1 && (
+            <TouchableOpacity
+              style={[styles.button, { marginBottom: 12 }]}
+              onPress={() => setShowSwitchModal(true)}
+            >
+              <Text style={styles.buttonText}>🔄 החלף סביבה</Text>
+            </TouchableOpacity>
+          )}
+
+          <TouchableOpacity
+            style={[
+              styles.button,
+              { marginBottom: 16, backgroundColor: "#1e2832" },
+            ]}
+            onPress={() => onAddWorkspace()}
+          >
+            <Text style={[styles.buttonText, { color: "#00e5a0" }]}>
+              ➕ הוסף סביבה
+            </Text>
+          </TouchableOpacity>
 
           <TouchableOpacity style={styles.deleteButton} onPress={confirmDelete}>
             <Text style={styles.deleteText}>🗑️ מחק סביבה</Text>
@@ -223,7 +311,7 @@ const styles = StyleSheet.create({
   },
   buttonText: { color: "#080c10", fontWeight: "bold" },
   editLink: { color: "#4da8ff", fontSize: 13, marginBottom: 8 },
-  cancel: { color: "#6a7a8a", textAlign: "center", marginTop: 4 },
+  cancel: { color: "#6a7a8a", textAlign: "center", marginTop: 8 },
   inviteCode: {
     color: "#00e5a0",
     fontSize: 32,
@@ -257,4 +345,35 @@ const styles = StyleSheet.create({
     marginBottom: 48,
   },
   signOutText: { color: "#6a7a8a", fontWeight: "bold", fontSize: 16 },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.7)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalCard: {
+    backgroundColor: "#0e1318",
+    borderColor: "#1e2832",
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 24,
+    width: "80%",
+  },
+  modalTitle: {
+    color: "#00e5a0",
+    fontWeight: "bold",
+    fontSize: 16,
+    marginBottom: 16,
+    textAlign: "center",
+  },
+  modalItem: {
+    paddingVertical: 12,
+    borderBottomColor: "#1e2832",
+    borderBottomWidth: 1,
+  },
+  modalItemText: {
+    color: "#eaf0f8",
+    fontSize: 15,
+    textAlign: "center",
+  },
 });

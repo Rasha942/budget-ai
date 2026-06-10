@@ -63,7 +63,7 @@ export default function LoginScreen({ request, promptAsync, onSignIn }) {
                 setError("");
                 try {
                   const token = await signInWithGoogleAndroid();
-                  await onSignIn(token);
+                  await onSignIn(token, true);
                 } catch (err) {
                   setError("שגיאה: " + err.message);
                 } finally {

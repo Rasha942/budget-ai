@@ -164,16 +164,17 @@ app.post("/auth/signin", async (req, res) => {
     const userRef = doc(db, "users", email);
     const userDoc = await getDoc(userRef);
 
+    let workspaceIds = [];
     let workspaceId;
     let isNewUser = false;
     if (userDoc.exists()) {
       workspaceId = userDoc.data().workspaceIds[0];
+      workspaceIds = userDoc.data().workspaceIds;
     } else {
-      workspaceId = await createWorkspace(email, name, `${name}'s Budget`);
       isNewUser = true;
     }
 
-    res.json({ user: { email, name }, workspaceId, isNewUser });
+    res.json({ user: { email, name }, workspaceId, workspaceIds, isNewUser });
   } catch (error) {
     console.error("Auth error:", error.message);
     res.status(401).json({ error: "Authentication failed" });
