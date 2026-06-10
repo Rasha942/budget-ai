@@ -31,7 +31,7 @@ export default function HistoryScreen({ token, workspaceId }) {
   useFocusEffect(
     useCallback(() => {
       fetchTransactions();
-    }, []),
+    }, [workspaceId]),
   );
 
   async function fetchTransactions() {

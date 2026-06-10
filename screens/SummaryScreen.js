@@ -46,7 +46,7 @@ export default function SummaryScreen({ token, workspaceId }) {
   useFocusEffect(
     useCallback(() => {
       fetchTransactions();
-    }, []),
+    }, [workspaceId]),
   );
   const filtered = filterByDateRange(transactions, fromDate, toDate);
   const summary = filtered.reduce((acc, t) => {
