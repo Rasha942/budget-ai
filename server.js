@@ -301,10 +301,6 @@ app.delete("/workspace/:id", verifyToken, async (req, res) => {
     res.status(500).json({ error: "Failed to delete workspace" });
   }
 });
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
 
 app.post("/export", verifyToken, async (req, res) => {
   try {
@@ -362,4 +358,31 @@ app.post("/export", verifyToken, async (req, res) => {
     console.error("Export error:", error.message);
     res.status(500).json({ error: "Failed to export" });
   }
+});
+
+app.delete("/user", verifyToken, async (req, res) => {
+  try {
+    const userEmail = req.user.email;
+    const userRef = doc(db, "users", userEmail);
+    const userDoc = await getDoc(userRef);
+    if (userDoc.exists()) {
+      const { workspaceIds } = userDoc.data();
+      // delete each workspace and its transactions
+      for (const workspaceId of workspaceIds) {
+        await deleteWorkspace(workspaceId, userEmail);
+      }
+      await deleteDoc(userRef);
+    }
+    const user = await admin.auth().getUserByEmail(userEmail);
+    await admin.auth().deleteUser(user.uid);
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Delete user error:", error.message);
+    res.status(500).json({ error: "Failed to delete account" });
+  }
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });

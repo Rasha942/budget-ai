@@ -30,6 +30,8 @@ export default function WorkspaceScreen({
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [newName, setNewName] = useState("");
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     fetchWorkspace();
@@ -95,20 +97,20 @@ export default function WorkspaceScreen({
       const confirmed = window.confirm(
         `האם אתה בטוח שברצונך למחוק את "${workspace.name}"? פעולה זו אינה הפיכה.`,
       );
-      if (confirmed) handleDelete();
+      if (confirmed) handleDeleteWorkspace();
     } else {
       Alert.alert(
         "מחיקת סביבה",
         `האם אתה בטוח שברצונך למחוק את "${workspace.name}"? פעולה זו אינה הפיכה.`,
         [
           { text: "ביטול", style: "cancel" },
-          { text: "מחק", style: "destructive", onPress: handleDelete },
+          { text: "מחק", style: "destructive", onPress: handleDeleteWorkspace },
         ],
       );
     }
   }
 
-  async function handleDelete() {
+  async function handleDeleteWorkspace() {
     try {
       await fetch(`${SERVER}/workspace/${workspaceId}`, {
         method: "DELETE",
@@ -119,7 +121,17 @@ export default function WorkspaceScreen({
       console.error("Error deleting workspace:", error);
     }
   }
-
+  async function handleDeleteAccount() {
+    try {
+      await fetch(`${SERVER}/user`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      onSignOut();
+    } catch (error) {
+      console.error("Error deleting account:", error);
+    }
+  }
   async function shareInviteCode() {
     try {
       await Share.share({
@@ -139,7 +151,6 @@ export default function WorkspaceScreen({
     <ScrollView style={styles.container}>
       <Text style={styles.title}>⚙️ סביבת עבודה</Text>
 
-      {/* Switch workspace modal */}
       <Modal
         visible={showSwitchModal}
         transparent
@@ -175,7 +186,60 @@ export default function WorkspaceScreen({
           </View>
         </TouchableOpacity>
       </Modal>
-
+      {showDeleteConfirm && (
+        <Modal
+          visible={showDeleteConfirm}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowDeleteConfirm(false)}
+        >
+          <TouchableOpacity
+            style={styles.modalOverlay}
+            activeOpacity={1}
+            onPress={() => setShowDeleteConfirm(false)}
+          >
+            <View style={styles.modalCard}>
+              <Text style={styles.modalTitle}>מחיקת חשבון</Text>
+              <Text
+                style={{
+                  color: "#eaf0f8",
+                  marginBottom: 16,
+                  textAlign: "center",
+                }}
+              >
+                כתוב "מחק" לאישור מחיקת החשבון
+              </Text>
+              <TextInput
+                style={styles.input}
+                value={deleteConfirmText}
+                onChangeText={setDeleteConfirmText}
+                placeholder="מחק"
+                placeholderTextColor="#6a7a8a"
+              />
+              <TouchableOpacity
+                style={[
+                  styles.button,
+                  {
+                    backgroundColor:
+                      deleteConfirmText === "מחק" ? "#ff6b6b" : "#1e2832",
+                  },
+                ]}
+                onPress={() => {
+                  if (deleteConfirmText === "מחק") {
+                    setShowDeleteConfirm(false);
+                    handleDeleteAccount();
+                  }
+                }}
+              >
+                <Text style={styles.buttonText}>מחק חשבון</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setShowDeleteConfirm(false)}>
+                <Text style={styles.cancel}>ביטול</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </Modal>
+      )}
       {workspace && (
         <>
           <View style={styles.card}>
@@ -257,6 +321,12 @@ export default function WorkspaceScreen({
 
       <TouchableOpacity style={styles.signOutButton} onPress={onSignOut}>
         <Text style={styles.signOutText}>התנתק</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.deleteAccountButton}
+        onPress={() => setShowDeleteConfirm(true)}
+      >
+        <Text style={styles.deleteAccountText}>🗑️ מחק חשבון</Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -376,4 +446,13 @@ const styles = StyleSheet.create({
     fontSize: 15,
     textAlign: "center",
   },
+  deleteAccountButton: {
+    borderColor: "#ff6b6b",
+    borderWidth: 1,
+    padding: 16,
+    borderRadius: 8,
+    alignItems: "center",
+    marginBottom: 48,
+  },
+  deleteAccountText: { color: "#ff6b6b", fontWeight: "bold", fontSize: 16 },
 });
