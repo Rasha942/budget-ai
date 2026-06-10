@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "878270972278",
+    "project_id": "ai-budget-30e24",
+    "storage_bucket": "ai-budget-30e24.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:878270972278:android:5146bddd16858d1749fa57",
+        "android_client_info": {
+          "package_name": "com.razsharaby.budgetai"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "878270972278-22344lcv57s76up31nc8iauiolmv3t3f.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCQpKMrhYA1RNSEoZTJJCIa_0uqBLMDd4Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "878270972278-22344lcv57s76up31nc8iauiolmv3t3f.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
