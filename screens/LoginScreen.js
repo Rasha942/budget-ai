@@ -17,6 +17,7 @@ import { AntDesign } from "@expo/vector-icons";
 
 export default function LoginScreen({ request, promptAsync, onSignIn }) {
   const [mode, setMode] = useState(null);
+  const [userName, setUserName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -36,11 +37,11 @@ export default function LoginScreen({ request, promptAsync, onSignIn }) {
     }
   }
   async function handleEmailRegister() {
-    if (!email || !password) return;
+    if (!email || !password || !userName) return;
     setLoading(true);
     setError("");
     try {
-      await onSignIn(await registerWithEmail(email, password));
+      await onSignIn(await registerWithEmail(email, password), false, userName);
     } catch (error) {
       console.error("Sign in error:", error);
       setError("שגיאת רישום");
@@ -79,14 +80,20 @@ export default function LoginScreen({ request, promptAsync, onSignIn }) {
             <AntDesign name="google" size={20} color="#080c10" />
           </TouchableOpacity>
           <TouchableOpacity
-            style={styles.outlineButton}
-            onPress={() => setMode("email")}
+            style={styles.button}
+            onPress={() => setMode("signin")}
           >
-            <Text style={styles.outlineButtonText}>🔐 התחבר עם Email</Text>
+            <Text style={styles.buttonText}>התחבר עם אימייל</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.outlineButton}
+            onPress={() => setMode("register")}
+          >
+            <Text style={styles.outlineButtonText}>הרשם</Text>
           </TouchableOpacity>
         </View>
       )}
-      {mode === "email" && (
+      {mode === "signin" && (
         <View style={styles.form}>
           <Text style={styles.label}>Email</Text>
           <TextInput
@@ -103,24 +110,56 @@ export default function LoginScreen({ request, promptAsync, onSignIn }) {
             placeholderTextColor="#6a7a8a"
             value={password}
             onChangeText={setPassword}
+            secureTextEntry
           />
           {loading ? (
             <ActivityIndicator color="#00e5a0" />
           ) : (
-            <>
-              <TouchableOpacity
-                style={styles.button}
-                onPress={handleEmailSignIn}
-              >
-                <Text style={styles.buttonText}>התחבר</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.outlineButton}
-                onPress={handleEmailRegister}
-              >
-                <Text style={styles.outlineButtonText}>הרשם</Text>
-              </TouchableOpacity>
-            </>
+            <TouchableOpacity style={styles.button} onPress={handleEmailSignIn}>
+              <Text style={styles.buttonText}>התחבר</Text>
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity onPress={() => setMode(null)}>
+            <Text style={styles.back}>← חזור</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+      {mode === "register" && (
+        <View style={styles.form}>
+          <Text style={styles.label}>שם משתמש</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="שם משתמש"
+            placeholderTextColor="#6a7a8a"
+            value={userName}
+            onChangeText={setUserName}
+          />
+          <Text style={styles.label}>Email</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="email"
+            placeholderTextColor="#6a7a8a"
+            value={email}
+            onChangeText={setEmail}
+          />
+          <Text style={styles.label}>סיסמא</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="password"
+            placeholderTextColor="#6a7a8a"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+          />
+          {loading ? (
+            <ActivityIndicator color="#00e5a0" />
+          ) : (
+            <TouchableOpacity
+              style={styles.button}
+              onPress={handleEmailRegister}
+            >
+              <Text style={styles.buttonText}>הרשם</Text>
+            </TouchableOpacity>
           )}
           <TouchableOpacity onPress={() => setMode(null)}>
             <Text style={styles.back}>← חזור</Text>

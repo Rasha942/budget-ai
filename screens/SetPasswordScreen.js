@@ -11,12 +11,13 @@ import { linkEmailPassword } from "../auth";
 
 export default function SetPasswordScreen({ onPasswordSet, user }) {
   const [password, setPassword] = useState("");
+  const [userName, setUserName] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   async function handleSetPassword() {
-    if (!password || !confirmPassword) return;
+    if (!password || !confirmPassword || !userName) return;
     if (password !== confirmPassword) {
       setError("הסיסמאות אינן תואמות");
       return;
@@ -25,7 +26,7 @@ export default function SetPasswordScreen({ onPasswordSet, user }) {
     setError("");
     try {
       const firebasIdToken = await linkEmailPassword(user.email, password);
-      onPasswordSet();
+      onPasswordSet(userName);
     } catch (error) {
       setError("שגיאה בהגדרת סיסמא");
     } finally {
@@ -34,8 +35,16 @@ export default function SetPasswordScreen({ onPasswordSet, user }) {
   }
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>הגדר סיסמא</Text>
+      <Text style={styles.title}>הגדר סיסמא ושם משתמש</Text>
       <Text style={styles.subtitle}>צעד זה נחוץ על מנת להתחבר ללא Google</Text>
+
+      <TextInput
+        style={styles.input}
+        placeholder="שם משתמש"
+        placeholderTextColor="#6a7a8a"
+        value={userName}
+        onChangeText={setUserName}
+      />
       <TextInput
         style={styles.input}
         placeholder="סיסמא"

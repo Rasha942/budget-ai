@@ -79,14 +79,18 @@ export default function App() {
     }
   }
 
-  async function handleSignIn(firebaseIdToken, isGoogleSignIn = false) {
+  async function handleSignIn(
+    firebaseIdToken,
+    isGoogleSignIn = false,
+    userName = null,
+  ) {
     try {
       const response = await fetch(
         "https://budget-ai-production-1c70.up.railway.app/auth/signin",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ idToken: firebaseIdToken }),
+          body: JSON.stringify({ idToken: firebaseIdToken, userName }),
         },
       );
       const data = await response.json();
@@ -145,7 +149,20 @@ export default function App() {
   if (needsPassword) {
     return (
       <SetPasswordScreen
-        onPasswordSet={() => setNeedsPassword(false)}
+        onPasswordSet={async (userName) => {
+          await fetch(
+            "https://budget-ai-production-1c70.up.railway.app/user/name",
+            {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({ userName }),
+            },
+          );
+          setNeedsPassword(false);
+        }}
         user={user}
         token={token}
       />

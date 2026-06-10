@@ -19,7 +19,13 @@ const Anthropic = require("@anthropic-ai/sdk");
 require("dotenv").config();
 const { admin } = require("./services/firebaseAdmin");
 const { db } = require("./services/firebase");
-const { doc, getDoc, updateDoc, deleteDoc } = require("firebase/firestore");
+const {
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  deleteDoc,
+} = require("firebase/firestore");
 const {
   createWorkspace,
   joinWorkspace,
@@ -127,10 +133,20 @@ app.get("/summary", verifyToken, async (req, res) => {
     res.status(500).json({ error: "Failed to get summary" });
   }
 });
-
+app.put("/user/name", verifyToken, async (req, res) => {
+  try {
+    const userEmail = req.user.email;
+    const { userName } = req.body;
+    await updateDoc(doc(db, "users", userEmail), { userName, name: userName });
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Update username error:", error.message);
+    res.status(500).json({ error: "Failed to update username" });
+  }
+});
 app.post("/auth/signin", async (req, res) => {
   try {
-    const { idToken } = req.body;
+    const { idToken, userName } = req.body;
 
     const firebaseToken = await admin
       .auth()
@@ -159,7 +175,10 @@ app.post("/auth/signin", async (req, res) => {
 
     const email = firebaseToken.email;
     const name =
-      firebaseToken.name || firebaseToken.displayName || email.split("@")[0];
+      userName ||
+      firebaseToken.name ||
+      firebaseToken.displayName ||
+      email.split("@")[0];
 
     const userRef = doc(db, "users", email);
     const userDoc = await getDoc(userRef);
@@ -172,9 +191,20 @@ app.post("/auth/signin", async (req, res) => {
       workspaceIds = userDoc.data().workspaceIds;
     } else {
       isNewUser = true;
+      await setDoc(doc(db, "users", email), {
+        email,
+        name,
+        userName: userName || name,
+        workspaceIds: [],
+      });
     }
 
-    res.json({ user: { email, name }, workspaceId, workspaceIds, isNewUser });
+    res.json({
+      user: { email, name, userName: userName || name },
+      workspaceId,
+      workspaceIds,
+      isNewUser,
+    });
   } catch (error) {
     console.error("Auth error:", error.message);
     res.status(401).json({ error: "Authentication failed" });
