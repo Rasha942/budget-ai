@@ -29,8 +29,8 @@ if (!isExpoGo && Platform.OS === "android") {
   GoogleSignin.configure({
     webClientId:
       "878270972278-22344lcv57s76up31nc8iauiolmv3t3f.apps.googleusercontent.com",
-    androidClientId:
-      "878270972278-l72lphaan5gqg49b96kluc435f8vnb5a.apps.googleusercontent.com",
+    // androidClientId:
+    //   "878270972278-l72lphaan5gqg49b96kluc435f8vnb5a.apps.googleusercontent.com",
   });
 }
 WebBrowser.maybeCompleteAuthSession();
