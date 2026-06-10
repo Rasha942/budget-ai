@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "878270972278-l72lphaan5gqg49b96kluc435f8vnb5a.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.razsharaby.budgetai",
+            "certificate_hash": "4a920b0a69201d772ce4fe940425884f7c2d1c0b"
+          }
+        },
+        {
           "client_id": "878270972278-22344lcv57s76up31nc8iauiolmv3t3f.apps.googleusercontent.com",
           "client_type": 3
         }
