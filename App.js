@@ -44,7 +44,7 @@ export default function App() {
   useEffect(() => {
     if (response?.type === "success") {
       const { access_token } = response.params;
-      getFirebaseIdToken(access_token).then(handleSignIn);
+      getFirebaseIdToken(access_token).then((token) => handleSignIn(token, true));
     }
   }, [response]);
 
@@ -174,8 +174,11 @@ export default function App() {
         user={user}
         token={token}
         onWorkspaceReady={async (id) => {
+          const newIds = [id];
+          setWorkspaceIds(newIds);
           setWorkspaceId(id);
-          await AsyncStorage.setItem("workspaceId", id); // fix: persist after joining/creating
+          await AsyncStorage.setItem("workspaceIds", JSON.stringify(newIds));
+          await AsyncStorage.setItem("workspaceId", id);
         }}
       />
     );
