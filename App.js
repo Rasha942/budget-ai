@@ -68,7 +68,22 @@ export default function App() {
         if (freshToken) await AsyncStorage.setItem("token", freshToken);
         setUser(JSON.parse(savedUser));
         setWorkspaceId(savedWorkspaceId);
-        setWorkspaceIds(JSON.parse(savedWorkspaceIds));
+
+        try {
+          const res = await fetch(
+            "https://budget-ai-production-1c70.up.railway.app/user/workspaces",
+            { headers: { Authorization: `Bearer ${tokenToUse}` } },
+          );
+          const data = await res.json();
+          const freshIds =
+            data.workspaceIds?.length
+              ? data.workspaceIds
+              : JSON.parse(savedWorkspaceIds);
+          setWorkspaceIds(freshIds);
+          await AsyncStorage.setItem("workspaceIds", JSON.stringify(freshIds));
+        } catch {
+          setWorkspaceIds(JSON.parse(savedWorkspaceIds));
+        }
       } else {
         await AsyncStorage.clear();
       }

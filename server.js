@@ -137,6 +137,18 @@ app.get("/summary", verifyToken, async (req, res) => {
     res.status(500).json({ error: "Failed to get summary" });
   }
 });
+app.get("/user/workspaces", verifyToken, async (req, res) => {
+  try {
+    const userEmail = req.user.email;
+    const userDoc = await getDoc(doc(db, "users", userEmail));
+    const workspaceIds = userDoc.exists() ? userDoc.data().workspaceIds || [] : [];
+    res.json({ workspaceIds });
+  } catch (error) {
+    console.error("Get workspaces error:", error.message);
+    res.status(500).json({ error: "Failed to get workspaces" });
+  }
+});
+
 app.put("/user/name", verifyToken, async (req, res) => {
   try {
     const userEmail = req.user.email;
