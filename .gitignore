@@ -39,6 +39,13 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# credentials & secrets
 services/google-cred.json
 .env
 services/firebase-admin-cred.json
+
+# Claude Code tooling
+CLAUDE.md
+AGENTS.md
+.claude/
