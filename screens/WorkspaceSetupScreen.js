@@ -1,25 +1,18 @@
 import React, { useState } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
-} from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from "react-native";
+import { Paper, Stamp, Perforation, Button, Field, Icon } from "../components/receipt";
+import { colors, fonts } from "../theme/receipt";
 
 const SERVER = "https://budget-ai-production-1c70.up.railway.app";
 
-export default function WorkspaceSetupScreen({
-  user,
-  token,
-  onWorkspaceReady,
-}) {
+export default function WorkspaceSetupScreen({ user, token, onWorkspaceReady }) {
   const [mode, setMode] = useState(null);
   const [name, setName] = useState("");
   const [inviteCode, setInviteCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const firstName = user?.userName || user?.name?.split(" ")[0] || "";
 
   async function handleCreate() {
     if (!name) return;
@@ -28,10 +21,7 @@ export default function WorkspaceSetupScreen({
     try {
       const response = await fetch(`${SERVER}/workspace/create`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ name }),
       });
       const data = await response.json();
@@ -50,10 +40,7 @@ export default function WorkspaceSetupScreen({
     try {
       const response = await fetch(`${SERVER}/workspace/join`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ inviteCode }),
       });
       const data = await response.json();
@@ -68,127 +55,73 @@ export default function WorkspaceSetupScreen({
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>
-        ברוך הבא, {user?.userName || user?.name?.split(" ")[0]}!
-      </Text>
-      <Text style={styles.subtitle}>צור סביבת עבודה חדשה או הצטרף לקיימת</Text>
-
-      {!mode && (
-        <View style={styles.buttonGroup}>
-          <TouchableOpacity
-            style={styles.button}
-            onPress={() => setMode("create")}
-          >
-            <Text style={styles.buttonText}>➕ צור סביבה חדשה</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.outlineButton}
-            onPress={() => setMode("join")}
-          >
-            <Text style={styles.outlineButtonText}>🔗 הצטרף עם קוד הזמנה</Text>
-          </TouchableOpacity>
+      <Paper tilt={-1.2} style={{ width: "100%" }}>
+        <View style={styles.brandRow}>
+          <Text style={styles.brand}>Budget·AI</Text>
+          <Stamp label="NEW · חדש" tone="ink" />
         </View>
-      )}
+        <Perforation />
+        <Text style={styles.title}>ברוך הבא, {firstName}!</Text>
+        <Text style={styles.sub}>צור סביבת עבודה או הצטרף עם קוד</Text>
 
-      {mode === "create" && (
-        <View style={styles.form}>
-          <Text style={styles.label}>שם הסביבה</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="למשל: רז ונועה"
-            placeholderTextColor="#6a7a8a"
-            value={name}
-            onChangeText={setName}
-          />
-          {loading ? (
-            <ActivityIndicator color="#00e5a0" />
-          ) : (
-            <TouchableOpacity style={styles.button} onPress={handleCreate}>
-              <Text style={styles.buttonText}>צור</Text>
-            </TouchableOpacity>
-          )}
-          <TouchableOpacity onPress={() => setMode(null)}>
-            <Text style={styles.back}>← חזור</Text>
-          </TouchableOpacity>
-        </View>
-      )}
+        {!mode && (
+          <>
+            <Button label="צור סביבה חדשה" icon="plus" variant="gold" onPress={() => setMode("create")} style={{ marginTop: 16 }} />
+            <Perforation />
+            <Button label="הצטרף עם קוד הזמנה" icon="link" variant="ghost" onPress={() => setMode("join")} />
+          </>
+        )}
 
-      {mode === "join" && (
-        <View style={styles.form}>
-          <Text style={styles.label}>קוד הזמנה</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="הכנס קוד הזמנה"
-            placeholderTextColor="#6a7a8a"
-            value={inviteCode}
-            onChangeText={setInviteCode}
-            autoCapitalize="characters"
-          />
-          {loading ? (
-            <ActivityIndicator color="#00e5a0" />
-          ) : (
-            <TouchableOpacity style={styles.button} onPress={handleJoin}>
-              <Text style={styles.buttonText}>הצטרף</Text>
-            </TouchableOpacity>
-          )}
-          <TouchableOpacity onPress={() => setMode(null)}>
-            <Text style={styles.back}>← חזור</Text>
-          </TouchableOpacity>
-        </View>
-      )}
+        {mode === "create" && (
+          <>
+            <Field label="שם הסביבה" value={name} onChangeText={setName} placeholder="למשל: רז ונועה" />
+            {loading ? (
+              <ActivityIndicator color={colors.ink} style={{ marginTop: 14 }} />
+            ) : (
+              <Button label="צור" variant="gold" onPress={handleCreate} style={{ marginTop: 14 }} />
+            )}
+            <BackLink onPress={() => setMode(null)} />
+          </>
+        )}
 
-      {error ? <Text style={styles.error}>{error}</Text> : null}
+        {mode === "join" && (
+          <>
+            <Field
+              label="קוד הזמנה"
+              value={inviteCode}
+              onChangeText={setInviteCode}
+              placeholder="הכנס קוד הזמנה"
+              autoCapitalize="characters"
+            />
+            {loading ? (
+              <ActivityIndicator color={colors.ink} style={{ marginTop: 14 }} />
+            ) : (
+              <Button label="הצטרף" variant="primary" onPress={handleJoin} style={{ marginTop: 14 }} />
+            )}
+            <BackLink onPress={() => setMode(null)} />
+          </>
+        )}
+
+        {error ? <Text style={styles.error}>{error}</Text> : null}
+      </Paper>
     </View>
   );
 }
 
+function BackLink({ onPress }) {
+  return (
+    <TouchableOpacity onPress={onPress}>
+      <Text style={styles.back}>← חזור</Text>
+    </TouchableOpacity>
+  );
+}
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#080c10",
-    padding: 24,
-    justifyContent: "center",
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: "bold",
-    color: "#00e5a0",
-    textAlign: "center",
-    marginBottom: 8,
-  },
-  subtitle: {
-    color: "#6a7a8a",
-    textAlign: "center",
-    marginBottom: 48,
-    fontSize: 14,
-  },
-  buttonGroup: { gap: 16 },
-  button: {
-    backgroundColor: "#00e5a0",
-    padding: 16,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  buttonText: { color: "#080c10", fontSize: 16, fontWeight: "bold" },
-  outlineButton: {
-    borderColor: "#00e5a0",
-    borderWidth: 1,
-    padding: 16,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  outlineButtonText: { color: "#00e5a0", fontSize: 16, fontWeight: "bold" },
-  form: { gap: 12 },
-  label: { color: "#eaf0f8", fontSize: 14, marginBottom: 4 },
-  input: {
-    backgroundColor: "#0e1318",
-    color: "#eaf0f8",
-    borderColor: "#1e2832",
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 16,
-    fontSize: 16,
-  },
-  back: { color: "#6a7a8a", textAlign: "center", marginTop: 8 },
-  error: { color: "#ff6b6b", textAlign: "center", marginTop: 16 },
+  container: { flex: 1, backgroundColor: colors.ground, justifyContent: "center", padding: 24 },
+  brandRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  brand: { fontFamily: fonts.handLat, fontSize: 22, color: colors.ink },
+  title: { fontFamily: fonts.handHe, fontSize: 28, color: colors.text },
+  sub: { fontFamily: fonts.body, fontSize: 13, color: colors.sub, marginTop: 4 },
+  back: { fontFamily: fonts.body, fontSize: 13, color: colors.muted, textAlign: "center", marginTop: 12 },
+  error: { fontFamily: fonts.body, fontSize: 13, color: colors.red, textAlign: "center", marginTop: 14 },
 });

@@ -1,13 +1,8 @@
 import React, { useState } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
-} from "react-native";
+import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
 import { linkEmailPassword } from "../auth";
+import { Paper, Stamp, Perforation, Button, Field } from "../components/receipt";
+import { colors, fonts } from "../theme/receipt";
 
 export default function SetPasswordScreen({ onPasswordSet, user }) {
   const [password, setPassword] = useState("");
@@ -25,91 +20,46 @@ export default function SetPasswordScreen({ onPasswordSet, user }) {
     setLoading(true);
     setError("");
     try {
-      const firebasIdToken = await linkEmailPassword(user.email, password);
+      await linkEmailPassword(user.email, password);
       onPasswordSet(userName);
-    } catch (error) {
+    } catch (e) {
       setError("שגיאה בהגדרת סיסמא");
     } finally {
       setLoading(false);
     }
   }
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>הגדר סיסמא ושם משתמש</Text>
-      <Text style={styles.subtitle}>צעד זה נחוץ על מנת להתחבר ללא Google</Text>
+      <Paper style={{ width: "100%" }}>
+        <View style={styles.brandRow}>
+          <Text style={styles.brand}>Account</Text>
+          <Stamp label="SECURE" tone="red" />
+        </View>
+        <Perforation />
+        <Text style={styles.title}>הגדר סיסמא ושם</Text>
+        <Text style={styles.sub}>כדי שתוכל להתחבר גם בלי Google</Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="שם משתמש"
-        placeholderTextColor="#6a7a8a"
-        value={userName}
-        onChangeText={setUserName}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="סיסמא"
-        placeholderTextColor="#6a7a8a"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="אמת סיסמא"
-        placeholderTextColor="#6a7a8a"
-        value={confirmPassword}
-        onChangeText={setConfirmPassword}
-        secureTextEntry
-      />
-      {loading ? (
-        <ActivityIndicator color="#00e5a0" />
-      ) : (
-        <TouchableOpacity style={styles.button} onPress={handleSetPassword}>
-          <Text style={styles.buttonText}>התחבר</Text>
-        </TouchableOpacity>
-      )}
-      {error ? <Text style={styles.error}>{error}</Text> : null}
+        <Field label="שם משתמש" value={userName} onChangeText={setUserName} placeholder="שם משתמש" />
+        <Field label="סיסמא" value={password} onChangeText={setPassword} placeholder="••••••••" secureTextEntry inputStyle={{ textAlign: "left" }} />
+        <Field label="אימות סיסמא" value={confirmPassword} onChangeText={setConfirmPassword} placeholder="••••••••" secureTextEntry inputStyle={{ textAlign: "left" }} />
+
+        {loading ? (
+          <ActivityIndicator color={colors.ink} style={{ marginTop: 16 }} />
+        ) : (
+          <Button label="שמור והמשך" variant="primary" onPress={handleSetPassword} style={{ marginTop: 16 }} />
+        )}
+        {error ? <Text style={styles.error}>{error}</Text> : null}
+      </Paper>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#080c10",
-    padding: 24,
-    justifyContent: "center",
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: "bold",
-    color: "#00e5a0",
-    textAlign: "center",
-    marginBottom: 8,
-  },
-  subtitle: {
-    color: "#6a7a8a",
-    textAlign: "center",
-    marginBottom: 32,
-    fontSize: 14,
-  },
-  input: {
-    backgroundColor: "#0e1318",
-    color: "#eaf0f8",
-    borderColor: "#1e2832",
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 16,
-    fontSize: 16,
-    marginBottom: 12,
-  },
-  button: {
-    backgroundColor: "#00e5a0",
-    padding: 16,
-    borderRadius: 8,
-    alignItems: "center",
-    marginTop: 8,
-  },
-  buttonText: { color: "#080c10", fontSize: 16, fontWeight: "bold" },
-  error: { color: "#ff6b6b", textAlign: "center", marginTop: 16 },
+  container: { flex: 1, backgroundColor: colors.ground, justifyContent: "center", padding: 24 },
+  brandRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  brand: { fontFamily: fonts.handLat, fontSize: 22, color: colors.ink },
+  title: { fontFamily: fonts.handHe, fontSize: 28, color: colors.text },
+  sub: { fontFamily: fonts.body, fontSize: 13, color: colors.sub, marginTop: 4 },
+  error: { fontFamily: fonts.body, fontSize: 13, color: colors.red, textAlign: "center", marginTop: 14 },
 });

@@ -1,19 +1,8 @@
 import React, { useState } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
-  Platform,
-} from "react-native";
-import {
-  signInWithEmail,
-  registerWithEmail,
-  signInWithGoogleAndroid,
-} from "../auth";
-import { AntDesign } from "@expo/vector-icons";
+import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Platform } from "react-native";
+import { signInWithEmail, registerWithEmail, signInWithGoogleAndroid } from "../auth";
+import { Paper, Stamp, Perforation, Button, Field, Icon } from "../components/receipt";
+import { colors, fonts } from "../theme/receipt";
 
 export default function LoginScreen({ request, promptAsync, onSignIn }) {
   const [mode, setMode] = useState(null);
@@ -29,202 +18,110 @@ export default function LoginScreen({ request, promptAsync, onSignIn }) {
     setError("");
     try {
       await onSignIn(await signInWithEmail(email, password));
-    } catch (error) {
-      console.error("Sign in error:", error);
+    } catch (e) {
       setError("אימייל או סיסמא שגויים");
     } finally {
       setLoading(false);
     }
   }
+
   async function handleEmailRegister() {
     if (!email || !password || !userName) return;
     setLoading(true);
     setError("");
     try {
       await onSignIn(await registerWithEmail(email, password), false, userName);
-    } catch (error) {
-      console.error("Sign in error:", error);
+    } catch (e) {
       setError("שגיאת רישום");
     } finally {
       setLoading(false);
     }
   }
+
+  async function handleGoogle() {
+    if (Platform.OS === "android") {
+      setLoading(true);
+      setError("");
+      try {
+        const tk = await signInWithGoogleAndroid();
+        await onSignIn(tk, true);
+      } catch (err) {
+        setError("שגיאה: " + err.message);
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      promptAsync();
+    }
+  }
+
   return (
     <View style={styles.container}>
-      <Text style={styles.emoji}>💰</Text>
-      <Text style={styles.title}>AI Budget Manager</Text>
-      <Text style={styles.subtitle}>נהל את ההוצאות שלך בעברית</Text>
-      {!mode && (
-        <View style={styles.buttonGroup}>
-          <TouchableOpacity
-            style={styles.button}
-            onPress={async () => {
-              if (Platform.OS === "android") {
-                setLoading(true);
-                setError("");
-                try {
-                  const token = await signInWithGoogleAndroid();
-                  await onSignIn(token, true);
-                } catch (err) {
-                  setError("שגיאה: " + err.message);
-                } finally {
-                  setLoading(false);
-                }
-              } else {
-                promptAsync();
-              }
-            }}
-            disabled={Platform.OS !== "android" && !request}
-          >
-            <Text style={styles.buttonText}> התחבר עם Google</Text>
-            <AntDesign name="google" size={20} color="#080c10" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.button}
-            onPress={() => setMode("signin")}
-          >
-            <Text style={styles.buttonText}>התחבר עם אימייל</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.outlineButton}
-            onPress={() => setMode("register")}
-          >
-            <Text style={styles.outlineButtonText}>הרשם</Text>
-          </TouchableOpacity>
+      <Paper tilt={-1.4} style={{ width: "100%" }}>
+        <View style={styles.brandRow}>
+          <Icon name="receipt" size={30} color={colors.ink} />
+          <Stamp label="HELLO" tone="ink" />
         </View>
-      )}
-      {mode === "signin" && (
-        <View style={styles.form}>
-          <Text style={styles.label}>Email</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="email"
-            placeholderTextColor="#6a7a8a"
-            value={email}
-            onChangeText={setEmail}
-          />
-          <Text style={styles.label}>סיסמא</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="password"
-            placeholderTextColor="#6a7a8a"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-          />
-          {loading ? (
-            <ActivityIndicator color="#00e5a0" />
-          ) : (
-            <TouchableOpacity style={styles.button} onPress={handleEmailSignIn}>
-              <Text style={styles.buttonText}>התחבר</Text>
-            </TouchableOpacity>
-          )}
-          <TouchableOpacity onPress={() => setMode(null)}>
-            <Text style={styles.back}>← חזור</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-      {mode === "register" && (
-        <View style={styles.form}>
-          <Text style={styles.label}>שם משתמש</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="שם משתמש"
-            placeholderTextColor="#6a7a8a"
-            value={userName}
-            onChangeText={setUserName}
-          />
-          <Text style={styles.label}>Email</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="email"
-            placeholderTextColor="#6a7a8a"
-            value={email}
-            onChangeText={setEmail}
-          />
-          <Text style={styles.label}>סיסמא</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="password"
-            placeholderTextColor="#6a7a8a"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-          />
-          {loading ? (
-            <ActivityIndicator color="#00e5a0" />
-          ) : (
-            <TouchableOpacity
-              style={styles.button}
-              onPress={handleEmailRegister}
-            >
-              <Text style={styles.buttonText}>הרשם</Text>
-            </TouchableOpacity>
-          )}
-          <TouchableOpacity onPress={() => setMode(null)}>
-            <Text style={styles.back}>← חזור</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-      {error ? <Text style={styles.error}>{error}</Text> : null}
+        <Text style={styles.wordmark}>Budget·AI</Text>
+        <Text style={styles.tagline}>נהל הוצאות בעברית</Text>
+        <Text style={styles.sub}>כתוב מה הוצאת — וזה מסתדר לבד</Text>
+        <Perforation />
+
+        {!mode && (
+          <>
+            <Button label="התחבר עם Google" icon="google" variant="gold" onPress={handleGoogle} disabled={Platform.OS !== "android" && !request} />
+            <Button label="התחבר עם אימייל" variant="primary" onPress={() => setMode("signin")} style={{ marginTop: 10 }} />
+            <Button label="הרשמה" variant="ghost" onPress={() => setMode("register")} style={{ marginTop: 10 }} />
+          </>
+        )}
+
+        {mode === "signin" && (
+          <>
+            <Field label="אימייל" value={email} onChangeText={setEmail} placeholder="email" autoCapitalize="none" inputStyle={{ textAlign: "left" }} />
+            <Field label="סיסמא" value={password} onChangeText={setPassword} placeholder="password" secureTextEntry inputStyle={{ textAlign: "left" }} />
+            {loading ? (
+              <ActivityIndicator color={colors.ink} style={{ marginTop: 14 }} />
+            ) : (
+              <Button label="התחבר" variant="primary" onPress={handleEmailSignIn} style={{ marginTop: 14 }} />
+            )}
+            <BackLink onPress={() => setMode(null)} />
+          </>
+        )}
+
+        {mode === "register" && (
+          <>
+            <Field label="שם משתמש" value={userName} onChangeText={setUserName} placeholder="שם משתמש" />
+            <Field label="אימייל" value={email} onChangeText={setEmail} placeholder="email" autoCapitalize="none" inputStyle={{ textAlign: "left" }} />
+            <Field label="סיסמא" value={password} onChangeText={setPassword} placeholder="password" secureTextEntry inputStyle={{ textAlign: "left" }} />
+            {loading ? (
+              <ActivityIndicator color={colors.ink} style={{ marginTop: 14 }} />
+            ) : (
+              <Button label="הרשם" variant="primary" onPress={handleEmailRegister} style={{ marginTop: 14 }} />
+            )}
+            <BackLink onPress={() => setMode(null)} />
+          </>
+        )}
+
+        {error ? <Text style={styles.error}>{error}</Text> : null}
+      </Paper>
     </View>
   );
 }
 
+function BackLink({ onPress }) {
+  return (
+    <TouchableOpacity onPress={onPress}>
+      <Text style={styles.back}>← חזור</Text>
+    </TouchableOpacity>
+  );
+}
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#080c10",
-    padding: 24,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  emoji: { fontSize: 64, marginBottom: 16 },
-  title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#00e5a0",
-    marginBottom: 8,
-  },
-  subtitle: {
-    color: "#6a7a8a",
-    fontSize: 16,
-    marginBottom: 48,
-    textAlign: "center",
-  },
-  button: {
-    backgroundColor: "#00e5a0",
-    padding: 16,
-    borderRadius: 8,
-    width: "100%",
-    alignItems: "center",
-    justifyContent: "center",
-    flexDirection: "row",
-    gap: 0,
-  },
-  buttonText: { color: "#080c10", fontSize: 16, fontWeight: "bold" },
-  buttonGroup: { width: "100%", gap: 16 },
-  outlineButton: {
-    borderColor: "#00e5a0",
-    borderWidth: 1,
-    padding: 16,
-    borderRadius: 8,
-    width: "100%",
-    alignItems: "center",
-  },
-  outlineButtonText: { color: "#00e5a0", fontSize: 16, fontWeight: "bold" },
-  form: { width: "100%", gap: 12 },
-  label: { color: "#eaf0f8", fontSize: 14 },
-  input: {
-    backgroundColor: "#0e1318",
-    color: "#eaf0f8",
-    borderColor: "#1e2832",
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 16,
-    fontSize: 16,
-    width: "100%",
-  },
-  back: { color: "#6a7a8a", textAlign: "center", marginTop: 8 },
-  error: { color: "#ff6b6b", textAlign: "center", marginTop: 16 },
+  container: { flex: 1, backgroundColor: colors.ground, justifyContent: "center", padding: 24 },
+  brandRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  wordmark: { fontFamily: fonts.handLat, fontSize: 34, color: colors.ink, marginTop: 10 },
+  tagline: { fontFamily: fonts.handHe, fontSize: 26, color: colors.text, marginTop: 4 },
+  sub: { fontFamily: fonts.body, fontSize: 13, color: colors.sub, marginTop: 4 },
+  back: { fontFamily: fonts.body, fontSize: 13, color: colors.muted, textAlign: "center", marginTop: 12 },
+  error: { fontFamily: fonts.body, fontSize: 13, color: colors.red, textAlign: "center", marginTop: 14 },
 });

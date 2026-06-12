@@ -49,3 +49,6 @@ services/firebase-admin-cred.json
 CLAUDE.md
 AGENTS.md
 .claude/
+
+# design previews (local mockups, not shipped)
+design/

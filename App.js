@@ -1,9 +1,25 @@
 import React, { useState, useEffect } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { Text, AppState } from "react-native";
+import { AppState } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useFonts } from "expo-font";
+import { AmaticSC_700Bold } from "@expo-google-fonts/amatic-sc";
+import { Caveat_700Bold } from "@expo-google-fonts/caveat";
+import {
+  Rubik_400Regular,
+  Rubik_500Medium,
+  Rubik_600SemiBold,
+  Rubik_700Bold,
+} from "@expo-google-fonts/rubik";
+import {
+  SplineSansMono_400Regular,
+  SplineSansMono_500Medium,
+  SplineSansMono_600SemiBold,
+} from "@expo-google-fonts/spline-sans-mono";
 import { useGoogleAuth, getFirebaseIdToken, refreshToken } from "./auth";
+import Icon from "./components/receipt/Icon";
+import { colors } from "./theme/receipt";
 
 import LoginScreen from "./screens/LoginScreen";
 import WorkspaceSetupScreen from "./screens/WorkspaceSetupScreen";
@@ -23,6 +39,17 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const { request, response, promptAsync } = useGoogleAuth();
   const [needsPassword, setNeedsPassword] = useState(false);
+  const [fontsLoaded] = useFonts({
+    AmaticSC_700Bold,
+    Caveat_700Bold,
+    Rubik_400Regular,
+    Rubik_500Medium,
+    Rubik_600SemiBold,
+    Rubik_700Bold,
+    SplineSansMono_400Regular,
+    SplineSansMono_500Medium,
+    SplineSansMono_600SemiBold,
+  });
 
   useEffect(() => {
     restoreSession();
@@ -150,7 +177,7 @@ export default function App() {
       await AsyncStorage.removeItem("workspaceId");
     }
   }
-  if (loading) return null;
+  if (loading || !fontsLoaded) return null;
 
   if (!user) {
     return (
@@ -221,20 +248,23 @@ export default function App() {
         screenOptions={{
           headerShown: false,
           tabBarStyle: {
-            backgroundColor: "#0e1318",
-            borderTopColor: "#1e2832",
+            backgroundColor: "#DCD2BC",
+            borderTopColor: "#c4b698",
+            borderTopWidth: 2,
+            height: 64,
+            paddingTop: 6,
+            paddingBottom: 8,
           },
-          tabBarActiveTintColor: "#00e5a0",
-          tabBarInactiveTintColor: "#6a7a8a",
+          tabBarActiveTintColor: colors.ink,
+          tabBarInactiveTintColor: colors.muted,
+          tabBarLabelStyle: { fontFamily: "Rubik_500Medium", fontSize: 10 },
         }}
       >
         <Tab.Screen
           name="Home"
           options={{
             tabBarLabel: "בית",
-            tabBarIcon: ({ color }) => (
-              <Text style={{ color, fontSize: 20 }}>💰</Text>
-            ),
+            tabBarIcon: ({ color }) => <Icon name="home" size={21} color={color} strokeWidth={1.7} />,
           }}
         >
           {() => (
@@ -245,9 +275,7 @@ export default function App() {
           name="History"
           options={{
             tabBarLabel: "היסטוריה",
-            tabBarIcon: ({ color }) => (
-              <Text style={{ color, fontSize: 20 }}>📋</Text>
-            ),
+            tabBarIcon: ({ color }) => <Icon name="list" size={21} color={color} strokeWidth={1.7} />,
           }}
         >
           {() => <HistoryScreen token={token} workspaceId={workspaceId} />}
@@ -256,9 +284,7 @@ export default function App() {
           name="Summary"
           options={{
             tabBarLabel: "סיכום",
-            tabBarIcon: ({ color }) => (
-              <Text style={{ color, fontSize: 20 }}>📊</Text>
-            ),
+            tabBarIcon: ({ color }) => <Icon name="chart" size={21} color={color} strokeWidth={1.7} />,
           }}
         >
           {() => <SummaryScreen token={token} workspaceId={workspaceId} />}
@@ -267,9 +293,7 @@ export default function App() {
           name="Workspace"
           options={{
             tabBarLabel: "סביבה",
-            tabBarIcon: ({ color }) => (
-              <Text style={{ color, fontSize: 20 }}>⚙️</Text>
-            ),
+            tabBarIcon: ({ color }) => <Icon name="settings" size={21} color={color} strokeWidth={1.7} />,
           }}
         >
           {() => (

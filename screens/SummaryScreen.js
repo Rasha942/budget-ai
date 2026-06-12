@@ -10,28 +10,26 @@ import {
   TouchableOpacity,
   TextInput,
 } from "react-native";
-import { PieChart, BarChart } from "react-native-chart-kit";
-import { Dimensions } from "react-native";
 import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import {
+  Paper,
+  Stamp,
+  Perforation,
+  Barcode,
+  Button,
+  Donut,
+  Legend,
+  Bars,
+  Segmented,
+} from "../components/receipt";
+import { colors, fonts } from "../theme/receipt";
 import { getDefaultDates, filterByDateRange } from "../utils";
 
-const screenWidth = Dimensions.get("window").width - 48;
-const colors = [
-  //for charts
-  "#00e5a0",
-  "#4da8ff",
-  "#ff6b6b",
-  "#ffd166",
-  "#a78bfa",
-  "#f97316",
-  "#06b6d4",
-  "#ec4899",
-  "#84cc16",
-  "#f59e0b",
-];
 const SERVER = "https://budget-ai-production-1c70.up.railway.app";
+const fmt = (n) =>
+  Number(n || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 export default function SummaryScreen({ token, workspaceId }) {
   const { fromDate: defaultFrom, toDate: defaultTo } = getDefaultDates();
@@ -43,45 +41,51 @@ export default function SummaryScreen({ token, workspaceId }) {
   const [toDate, setToDate] = useState(defaultTo);
   const [showFromPicker, setShowFromPicker] = useState(false);
   const [showToPicker, setShowToPicker] = useState(false);
+  const [chartView, setChartView] = useState("pie");
+
   useFocusEffect(
     useCallback(() => {
       fetchTransactions();
     }, [workspaceId]),
   );
+
   const filtered = filterByDateRange(transactions, fromDate, toDate);
   const summary = filtered.reduce((acc, t) => {
-    if (!acc[t.category]) acc[t.category] = 0;
-    acc[t.category] += Number(t.amount);
+    acc[t.category] = (acc[t.category] || 0) + Number(t.amount);
     return acc;
   }, {});
-  const total = Object.values(summary).reduce((sum, val) => sum + val, 0);
-  const pieData = Object.entries(summary).map(([category, amount], index) => ({
-    name: category,
-    amount,
-    color: colors[index % colors.length],
-    legendFontColor: "#eaf0f8",
-    legendFontSize: 12,
+  const total = Object.values(summary).reduce((s, v) => s + v, 0);
+  const entries = Object.entries(summary).sort((a, b) => b[1] - a[1]);
+  const pct = (v) => (total ? Math.round((v / total) * 100) : 0);
+
+  const donutData = entries.map(([cat, amt], i) => ({
+    value: amt,
+    color: colors.chart[i % colors.chart.length],
   }));
-  const barData = {
-    labels: Object.keys(summary),
-    datasets: [{ data: Object.values(summary) }],
-  };
+  const legendItems = entries.map(([cat, amt], i) => ({
+    label: cat,
+    value: `${pct(amt)}%`,
+    color: colors.chart[i % colors.chart.length],
+  }));
+  const barItems = entries.map(([cat, amt], i) => ({
+    label: cat,
+    value: amt,
+    display: `${fmt(amt)} · ${pct(amt)}%`,
+    color: colors.chart[i % colors.chart.length],
+  }));
+
   async function fetchTransactions() {
     setLoading(true);
     try {
-      const response = await fetch(
-        `${SERVER}/transactions?workspaceId=${workspaceId}`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
+      const response = await fetch(`${SERVER}/transactions?workspaceId=${workspaceId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       const data = await response.json();
       setTransactions(data.transactions || []);
 
-      const workspaceResponse = await fetch(
-        `${SERVER}/workspace/${workspaceId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
+      const workspaceResponse = await fetch(`${SERVER}/workspace/${workspaceId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       const workspaceData = await workspaceResponse.json();
       setWorkspaceName(workspaceData.name);
     } catch (error) {
@@ -90,14 +94,12 @@ export default function SummaryScreen({ token, workspaceId }) {
       setLoading(false);
     }
   }
+
   async function exportToExcel() {
     try {
       const response = await fetch(`${SERVER}/export`, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
         body: JSON.stringify({ transactions: filtered, fromDate, toDate }),
       });
 
@@ -111,27 +113,18 @@ export default function SummaryScreen({ token, workspaceId }) {
         return;
       }
 
-      // native only
       const blob = await response.blob();
       const reader = new FileReader();
       reader.readAsDataURL(blob);
       reader.onload = async () => {
         try {
           const base64 = reader.result.split(",")[1];
-          const fileUri =
-            FileSystem.documentDirectory +
-            `${workspaceName}-${fromDate}-${toDate}.xlsx`;
-
+          const fileUri = FileSystem.documentDirectory + `${workspaceName}-${fromDate}-${toDate}.xlsx`;
           await FileSystem.writeAsStringAsync(fileUri, base64, {
             encoding: FileSystem.EncodingType.Base64,
           });
-          console.log("File written to:", fileUri);
-          const fileInfo = await FileSystem.getInfoAsync(fileUri);
-          console.log("File exists:", fileInfo.exists, "Size:", fileInfo.size);
-
           await Sharing.shareAsync(fileUri, {
-            mimeType:
-              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             UTI: "com.microsoft.excel.xlsx",
           });
         } catch (err) {
@@ -142,204 +135,139 @@ export default function SummaryScreen({ token, workspaceId }) {
       console.error("Export error:", error);
     }
   }
+
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.title}>📊 סיכום חודשי</Text>
+    <ScrollView style={styles.container} contentContainerStyle={{ padding: 20, paddingTop: 56, paddingBottom: 40 }}>
+      <Text style={styles.title}>סיכום</Text>
 
-      {loading && (
-        <ActivityIndicator color="#00e5a0" style={{ marginTop: 32 }} />
-      )}
-
+      {/* date range */}
       <View style={styles.dateRow}>
-        <View style={styles.dateField}>
-          <Text style={styles.fieldLabel}>מתאריך</Text>
-          {Platform.OS === "web" ? (
-            <TextInput
-              style={styles.dateInput}
-              value={fromDate}
-              onChangeText={setFromDate}
-              placeholder="YYYY-MM-DD"
-              placeholderTextColor="#6a7a8a"
-            />
-          ) : (
-            <>
-              <TouchableOpacity
-                style={styles.dateInput}
-                onPress={() => setShowFromPicker(true)}
-              >
-                <Text style={{ color: "#eaf0f8" }}>{fromDate}</Text>
-              </TouchableOpacity>
-              <View style={{ backgroundColor: "white", borderRadius: 8 }}>
-                {showFromPicker && (
-                  <DateTimePicker
-                    value={new Date(fromDate)}
-                    themeVariant="light"
-                    display="compact"
-                    mode="date"
-                    onChange={(event, date) => {
-                      setShowFromPicker(false);
-                      if (date) setFromDate(date.toISOString().split("T")[0]);
-                    }}
-                  />
-                )}
-              </View>
-            </>
-          )}
-        </View>
-        <View style={styles.dateField}>
-          <Text style={styles.fieldLabel}>עד תאריך</Text>
-          {Platform.OS === "web" ? (
-            <TextInput
-              style={styles.dateInput}
-              value={toDate}
-              onChangeText={setToDate}
-              placeholder="YYYY-MM-DD"
-              placeholderTextColor="#6a7a8a"
-            />
-          ) : (
-            <>
-              <TouchableOpacity
-                style={styles.dateInput}
-                onPress={() => setShowToPicker(true)}
-              >
-                <Text style={{ color: "#eaf0f8" }}>{toDate}</Text>
-              </TouchableOpacity>
-              <View style={{ backgroundColor: "white", borderRadius: 8 }}>
-                {showToPicker && (
-                  <DateTimePicker
-                    value={new Date(toDate)}
-                    mode="date"
-                    onChange={(event, date) => {
-                      setShowToPicker(false);
-                      if (date) setToDate(date.toISOString().split("T")[0]);
-                    }}
-                  />
-                )}
-              </View>
-            </>
-          )}
-        </View>
+        <DateField
+          label="מתאריך"
+          value={fromDate}
+          onChange={setFromDate}
+          show={showFromPicker}
+          setShow={setShowFromPicker}
+        />
+        <DateField
+          label="עד תאריך"
+          value={toDate}
+          onChange={setToDate}
+          show={showToPicker}
+          setShow={setShowToPicker}
+        />
       </View>
 
-      {Object.keys(summary).length > 0 && (
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>הוצאות לפי קטגוריה</Text>
-          {Object.entries(summary).map(([category, amount]) => (
-            <View key={category} style={styles.row}>
-              <Text style={styles.category}>{category}</Text>
-              <Text style={styles.amount}>{amount.toFixed(2)} ₪</Text>
-            </View>
-          ))}
-          <View style={styles.divider} />
-          <View style={styles.row}>
-            <Text style={styles.total}>סה״כ</Text>
-            <Text style={styles.totalAmount}>{total.toFixed(2)} ₪</Text>
-          </View>
+      {loading && <ActivityIndicator color={colors.ink} style={{ marginVertical: 24 }} />}
+
+      <Paper>
+        <View style={styles.brandRow}>
+          <Text style={styles.brand}>Summary</Text>
+          <Stamp label={`${toDate.slice(5, 7)} / ${toDate.slice(0, 4)}`} tone="ink" />
         </View>
-      )}
+        <Perforation />
+        <Text style={styles.totalLabel}>TOTAL · סה״כ</Text>
+        <Text style={styles.total}>₪{fmt(total)}</Text>
 
-      {Object.keys(summary).length > 0 && (
-        <>
-          <Text style={styles.chartTitle}>פילוח לפי קטגוריה</Text>
-          <PieChart
-            data={pieData}
-            width={screenWidth}
-            height={200}
-            chartConfig={{
-              color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-            }}
-            accessor="amount"
-            backgroundColor="transparent"
-            paddingLeft="15"
-          />
-          <Text style={styles.chartTitle}>הוצאות לפי קטגוריה</Text>
-          <BarChart
-            data={barData}
-            width={screenWidth}
-            height={220}
-            chartConfig={{
-              backgroundColor: "#0e1318",
-              backgroundGradientFrom: "#0e1318",
-              backgroundGradientTo: "#0e1318",
-              decimalPlaces: 0,
-              color: (opacity = 1) => `rgba(0, 229, 160, ${opacity})`,
-              labelColor: (opacity = 1) => `rgba(234, 240, 248, ${opacity})`,
-            }}
-            style={{ borderRadius: 8 }}
-          />
-        </>
-      )}
+        {entries.length > 0 ? (
+          <>
+            <View style={{ marginTop: 12 }}>
+              <Segmented
+                options={[
+                  { key: "pie", label: "עוגה" },
+                  { key: "bars", label: "עמודות" },
+                ]}
+                value={chartView}
+                onChange={setChartView}
+              />
+            </View>
 
-      <TouchableOpacity style={styles.exportButton} onPress={exportToExcel}>
-        <Text style={styles.exportButtonText}>📤 ייצא לאקסל</Text>
-      </TouchableOpacity>
+            {chartView === "pie" ? (
+              <View style={styles.pieRow}>
+                <Donut
+                  data={donutData}
+                  total={total}
+                  centerLabel="סה״כ"
+                  centerValue={Math.round(total).toLocaleString("en-US")}
+                />
+                <Legend items={legendItems} />
+              </View>
+            ) : (
+              <Bars items={barItems} />
+            )}
+          </>
+        ) : (
+          !loading && <Text style={styles.empty}>אין נתונים לטווח הזה</Text>
+        )}
+
+        <Perforation />
+        <Barcode />
+      </Paper>
+
+      <Button label="ייצוא לאקסל" icon="download" variant="primary" onPress={exportToExcel} style={{ marginTop: 14 }} />
     </ScrollView>
   );
 }
+
+function DateField({ label, value, onChange, show, setShow }) {
+  return (
+    <View style={{ flex: 1 }}>
+      <Text style={styles.fieldLabel}>{label}</Text>
+      {Platform.OS === "web" ? (
+        <TextInput
+          style={styles.dateInput}
+          value={value}
+          onChangeText={onChange}
+          placeholder="YYYY-MM-DD"
+          placeholderTextColor={colors.muted}
+        />
+      ) : (
+        <>
+          <TouchableOpacity style={styles.dateInput} onPress={() => setShow(true)}>
+            <Text style={styles.dateText}>{value}</Text>
+          </TouchableOpacity>
+          {show && (
+            <DateTimePicker
+              value={new Date(value)}
+              mode="date"
+              display="compact"
+              onChange={(e, date) => {
+                setShow(false);
+                if (date) onChange(date.toISOString().split("T")[0]);
+              }}
+            />
+          )}
+        </>
+      )}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#080c10",
-    padding: 24,
-    paddingTop: 60,
+  container: { flex: 1, backgroundColor: colors.ground },
+  title: { fontFamily: fonts.handHe, fontSize: 30, color: colors.text, marginBottom: 14 },
+  dateRow: { flexDirection: "row", gap: 12, marginBottom: 16 },
+  fieldLabel: {
+    fontFamily: fonts.mono,
+    fontSize: 10,
+    letterSpacing: 0.6,
+    color: colors.sub,
+    marginBottom: 5,
+    textAlign: "right",
   },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#00e5a0",
-    marginBottom: 24,
-    textAlign: "center",
-  },
-  dateRow: { flexDirection: "row", gap: 12, marginBottom: 24 },
-  dateField: { flex: 1 },
   dateInput: {
-    backgroundColor: "#0e1318",
-    color: "#eaf0f8",
-    borderColor: "#1e2832",
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 14,
+    backgroundColor: colors.paper,
+    borderColor: colors.field,
+    borderWidth: 1.5,
+    borderRadius: 10,
+    paddingVertical: 11,
+    paddingHorizontal: 12,
   },
-  fieldLabel: { color: "#6a7a8a", fontSize: 11, marginBottom: 4 },
-  exportButton: {
-    borderColor: "#00e5a0",
-    borderWidth: 1,
-    padding: 16,
-    borderRadius: 8,
-    alignItems: "center",
-    marginTop: 16,
-  },
-  exportButtonText: { color: "#00e5a0", fontSize: 16, fontWeight: "bold" },
-  chartTitle: {
-    color: "#eaf0f8",
-    fontSize: 14,
-    fontWeight: "bold",
-    marginTop: 24,
-    marginBottom: 8,
-  },
-  card: {
-    backgroundColor: "#0e1318",
-    borderColor: "#00e5a0",
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 16,
-  },
-  cardTitle: {
-    color: "#00e5a0",
-    fontWeight: "bold",
-    fontSize: 16,
-    marginBottom: 16,
-    textAlign: "center",
-  },
-  row: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingVertical: 8,
-  },
-  category: { color: "#eaf0f8", fontSize: 14 },
-  amount: { color: "#eaf0f8", fontSize: 14 },
-  divider: { height: 1, backgroundColor: "#1e2832", marginVertical: 8 },
-  total: { color: "#00e5a0", fontWeight: "bold", fontSize: 16 },
-  totalAmount: { color: "#00e5a0", fontWeight: "bold", fontSize: 16 },
+  dateText: { fontFamily: fonts.mono, fontSize: 13, color: colors.text },
+  brandRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  brand: { fontFamily: fonts.handLat, color: colors.ink, fontSize: 20 },
+  totalLabel: { fontFamily: fonts.mono, fontSize: 10, letterSpacing: 1, color: colors.sub, textAlign: "right" },
+  total: { fontFamily: fonts.monoSemi, fontSize: 32, color: colors.ink, marginTop: 6, textAlign: "right" },
+  pieRow: { flexDirection: "row", alignItems: "center", gap: 16, marginTop: 14 },
+  empty: { fontFamily: fonts.body, fontSize: 14, color: colors.muted, textAlign: "center", marginTop: 16 },
 });
