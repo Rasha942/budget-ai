@@ -1,4 +1,4 @@
-const hebrewMonths = [
+export const hebrewMonths = [
   "ינואר",
   "פברואר",
   "מרץ",
@@ -43,4 +43,27 @@ export function getDefaultDates() {
   const fromDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
   const toDate = now.toISOString().split("T")[0];
   return { fromDate, toDate };
+}
+
+// Manual number formatting — avoids Hermes Intl (toLocaleString can throw
+// "Cannot convert undefined value to object" on builds without Intl).
+export function formatAmount(n, decimals = 2) {
+  const num = Number(n);
+  const safe = Number.isFinite(num) ? num : 0;
+  const fixed = safe.toFixed(decimals);
+  const [intPart, dec] = fixed.split(".");
+  const withSep = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return dec ? `${withSep}.${dec}` : withSep;
+}
+
+export function currentMonthLabel() {
+  const d = new Date();
+  return `${hebrewMonths[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+// Format an arbitrary date value as DD.MM.YYYY (guards invalid dates).
+export function formatDateShort(value) {
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return "";
+  return `${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}.${d.getFullYear()}`;
 }

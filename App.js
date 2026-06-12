@@ -17,7 +17,7 @@ import {
   SplineSansMono_500Medium,
   SplineSansMono_600SemiBold,
 } from "@expo-google-fonts/spline-sans-mono";
-import { useGoogleAuth, getFirebaseIdToken, refreshToken } from "./auth";
+import { useGoogleAuth, getFirebaseIdToken, refreshToken, subscribeToIdToken } from "./auth";
 import Icon from "./components/receipt/Icon";
 import { colors } from "./theme/receipt";
 
@@ -53,6 +53,15 @@ export default function App() {
 
   useEffect(() => {
     restoreSession();
+  }, []);
+
+  // Keep token fresh automatically (fixes 401s after the ~1h token expiry).
+  useEffect(() => {
+    const unsubscribe = subscribeToIdToken(async (freshToken) => {
+      setToken(freshToken);
+      await AsyncStorage.setItem("token", freshToken);
+    });
+    return unsubscribe;
   }, []);
 
   useEffect(() => {

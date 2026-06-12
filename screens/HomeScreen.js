@@ -15,15 +15,12 @@ import {
 import { useFocusEffect } from "@react-navigation/native";
 import { Paper, Icon, Stamp, Perforation, LeaderLine, Barcode } from "../components/receipt";
 import { colors, fonts, type } from "../theme/receipt";
-import { getDefaultDates, filterByDateRange } from "../utils";
+import { getDefaultDates, filterByDateRange, formatAmount, currentMonthLabel } from "../utils";
 
 const SERVER = "https://budget-ai-production-1c70.up.railway.app";
 
-const monthStamp = () =>
-  new Date().toLocaleDateString("he-IL", { month: "long", year: "numeric" });
-
-const fmt = (n) =>
-  Number(n || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const monthStamp = currentMonthLabel;
+const fmt = (n) => formatAmount(n, 2);
 
 export default function HomeScreen({ token, workspaceId, user }) {
   const [input, setInput] = useState("");

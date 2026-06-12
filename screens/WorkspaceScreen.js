@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { Paper, Stamp, Perforation, LeaderLine, Button, Field, Icon } from "../components/receipt";
 import { colors, fonts } from "../theme/receipt";
+import { formatDateShort } from "../utils";
 
 const SERVER = "https://budget-ai-production-1c70.up.railway.app";
 
@@ -184,7 +185,7 @@ export default function WorkspaceScreen({
             <Text style={styles.expiry}>
               {workspace.inviteUsed
                 ? "⚠ קוד כבר שומש"
-                : `תוקף עד ${new Date(workspace.inviteExpiry).toLocaleDateString("he-IL")}`}
+                : `תוקף עד ${formatDateShort(workspace.inviteExpiry)}`}
             </Text>
             <Button label="שתף קוד הזמנה" icon="share" variant="gold" onPress={shareInviteCode} style={{ marginTop: 12 }} />
           </Paper>
@@ -195,7 +196,7 @@ export default function WorkspaceScreen({
             {workspace.members?.map((email) => (
               <View key={email} style={styles.member}>
                 <View style={styles.avatar}>
-                  <Text style={styles.avatarText}>{(email[0] || "?").toUpperCase()}</Text>
+                  <Text style={styles.avatarText}>{(email?.[0] || "?").toUpperCase()}</Text>
                 </View>
                 <Text style={styles.memberEmail}>{email}</Text>
               </View>
@@ -236,7 +237,7 @@ export default function WorkspaceScreen({
               {allWorkspaces.map((ws) => (
                 <TouchableOpacity key={ws.id} style={styles.member} onPress={() => handleSwitch(ws.id)}>
                   <View style={[styles.avatar, ws.id !== workspaceId && { backgroundColor: colors.muted }]}>
-                    <Text style={styles.avatarText}>{(ws.name[0] || "?").toUpperCase()}</Text>
+                    <Text style={styles.avatarText}>{(ws.name?.[0] || "?").toUpperCase()}</Text>
                   </View>
                   <Text style={styles.memberEmail}>{ws.name}</Text>
                   {ws.id === workspaceId && (

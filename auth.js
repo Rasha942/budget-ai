@@ -110,3 +110,16 @@ export async function refreshToken() {
   if (!currentUser) return null;
   return currentUser.getIdToken(true);
 }
+
+// Keep the app's token in sync with Firebase. Fires on sign-in and whenever
+// Firebase auto-refreshes the ID token (~hourly), so requests never go stale.
+export function subscribeToIdToken(onToken) {
+  return auth.onIdTokenChanged(async (user) => {
+    if (!user) return;
+    try {
+      onToken(await user.getIdToken());
+    } catch (e) {
+      console.warn("token refresh failed", e);
+    }
+  });
+}

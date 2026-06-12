@@ -25,11 +25,10 @@ import {
   Segmented,
 } from "../components/receipt";
 import { colors, fonts } from "../theme/receipt";
-import { getDefaultDates, filterByDateRange } from "../utils";
+import { getDefaultDates, filterByDateRange, formatAmount } from "../utils";
 
 const SERVER = "https://budget-ai-production-1c70.up.railway.app";
-const fmt = (n) =>
-  Number(n || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmt = (n) => formatAmount(n, 2);
 
 export default function SummaryScreen({ token, workspaceId }) {
   const { fromDate: defaultFrom, toDate: defaultTo } = getDefaultDates();
@@ -188,7 +187,7 @@ export default function SummaryScreen({ token, workspaceId }) {
                   data={donutData}
                   total={total}
                   centerLabel="סה״כ"
-                  centerValue={Math.round(total).toLocaleString("en-US")}
+                  centerValue={formatAmount(total, 0)}
                 />
                 <Legend items={legendItems} />
               </View>
