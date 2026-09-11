@@ -7,12 +7,6 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.razsharaby.budgetai",
@@ -25,7 +19,6 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true,
       "package": "com.razsharaby.budgetai",
       "googleServicesFile": "./google-services.json"
     },
@@ -41,7 +34,18 @@
           "iosUrlScheme": "com.googleusercontent.apps.869872520581-m0mnan19clvbbcid2i5qubvt48sa9g2u"
         }
       ],
-      "expo-font"
+      "expo-font",
+      "expo-sharing",
+      "expo-status-bar",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#ffffff",
+          "enableFullScreenImage_legacy": true
+        }
+      ]
     ],
     "extra": {
       "eas": {

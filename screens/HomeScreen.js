@@ -12,7 +12,7 @@ import {
   Keyboard,
   Platform,
 } from "react-native";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect } from "expo-router/react-navigation";
 import { Paper, Icon, Stamp, Perforation, LeaderLine, Barcode } from "../components/receipt";
 import { colors, fonts, type } from "../theme/receipt";
 import { getDefaultDates, filterByDateRange, formatAmount, currentMonthLabel } from "../utils";

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { NavigationContainer } from "@react-navigation/native";
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { NavigationContainer } from "expo-router/react-navigation";
+import { createBottomTabNavigator } from "expo-router/js-tabs";
 import { AppState } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFonts } from "expo-font";
